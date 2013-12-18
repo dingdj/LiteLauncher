@@ -57,7 +57,7 @@ public class IconCache {
 
         mContext = context;
         mPackageManager = context.getPackageManager();
-        mIconDpi = activityManager.getLauncherLargeIconDensity();
+        mIconDpi = 320; //activityManager.getLauncherLargeIconDensity();
 
         // need to set mIconDpi before getting default icon
         mDefaultIcon = makeDefaultIcon();
