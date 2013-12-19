@@ -95,7 +95,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.common.Search;
+//import com.android.common.Search;
 import com.ddj.launcher.R;
 import com.ddj.launcher2.DropTarget.DragObject;
 
@@ -1638,7 +1638,7 @@ public final class Launcher extends Activity
         }
         if (appSearchData == null) {
             appSearchData = new Bundle();
-            appSearchData.putString(Search.SOURCE, "launcher-search");
+            //appSearchData.putString(Search.SOURCE, "launcher-search");
         }
         Rect sourceBounds = new Rect();
         if (mSearchDropTargetBar != null) {
@@ -2648,7 +2648,8 @@ public final class Launcher extends Activity
                         hideDockDivider();
                     }
                     if (!animationCancelled) {
-                        updateWallpaperVisibility(false);
+                    	//修改匣子中显示背景图
+                        //updateWallpaperVisibility(false);
                     }
 
                     // Hide the search bar
@@ -2728,7 +2729,7 @@ public final class Launcher extends Activity
             dispatchOnLauncherTransitionPrepare(toView, animated, false);
             dispatchOnLauncherTransitionStart(toView, animated, false);
             dispatchOnLauncherTransitionEnd(toView, animated, false);
-            updateWallpaperVisibility(false);
+            updateWallpaperVisibility(true);
         }
     }
 

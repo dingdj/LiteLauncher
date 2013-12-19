@@ -16,15 +16,20 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.RemotableViewMethod;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -35,14 +40,15 @@ import android.widget.TextView;
 
 import com.ddj.launcher.R;
 
-import java.util.ArrayList;
-
 public class AppsCustomizeTabHost extends TabHost implements LauncherTransitionable,
         TabHost.OnTabChangeListener  {
     static final String LOG_TAG = "AppsCustomizeTabHost";
 
     private static final String APPS_TAB_TAG = "APPS";
     private static final String WIDGETS_TAB_TAG = "WIDGETS";
+    
+    public static final String BACKGROUND_COLOR = "#191919";
+	public static final int BACKGROUND_ALPHA = 130;
 
     private final LayoutInflater mLayoutInflater;
     private ViewGroup mTabs;
@@ -127,8 +133,9 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
         addTab(newTabSpec(APPS_TAB_TAG).setIndicator(tabView).setContent(contentFactory));
         label = getContext().getString(R.string.widgets_tab_label);
         tabView = (TextView) mLayoutInflater.inflate(R.layout.tab_widget_indicator, tabs, false);
-        tabView.setTextSize(15);
+        
         tabView.setText(label);
+        tabView.setTextSize(15);
         tabView.setContentDescription(label);
         tabView.getLayoutParams().width = 80;
         addTab(newTabSpec(WIDGETS_TAB_TAG).setIndicator(tabView).setContent(contentFactory));
@@ -143,6 +150,7 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
 
         // Hide the tab bar until we measure
         mTabsContainer.setAlpha(0f);
+        setBackgroundDrawable(null);
     }
 
     @Override
@@ -484,4 +492,17 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
     boolean isTransitioning() {
         return mInTransition;
     }
+    
+    @Override
+	public void setBackgroundDrawable(Drawable d) {
+		if (d == null) {
+			int color = Color.parseColor(BACKGROUND_COLOR);
+			color = ColorUtil.argbColorAlpha(color, BACKGROUND_ALPHA);
+			super.setBackgroundColor(color);
+			return;
+		}
+		super.setBackgroundDrawable(d);
+    }
+    
+    
 }
