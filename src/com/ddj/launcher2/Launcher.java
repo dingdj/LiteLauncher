@@ -98,6 +98,7 @@ import android.widget.Toast;
 //import com.android.common.Search;
 import com.ddj.launcher.R;
 import com.ddj.launcher2.DropTarget.DragObject;
+import com.ddj.launcher2.debug.MemoryUse;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -431,6 +432,8 @@ public final class Launcher extends Activity
 
         // On large interfaces, we want the screen to auto-rotate based on the current orientation
         unlockScreenOrientation(true);
+        //开启内存监测
+        MemoryUse.start();
     }
 
     protected void onUserLeaveHint() {

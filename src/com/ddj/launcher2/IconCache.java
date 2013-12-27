@@ -26,7 +26,9 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 import java.util.HashMap;
 
@@ -38,6 +40,7 @@ public class IconCache {
     private static final String TAG = "Launcher.IconCache";
 
     private static final int INITIAL_ICON_CACHE_CAPACITY = 50;
+    
 
     private static class CacheEntry {
         public Bitmap icon;
@@ -57,7 +60,7 @@ public class IconCache {
 
         mContext = context;
         mPackageManager = context.getPackageManager();
-        mIconDpi = 320; //activityManager.getLauncherLargeIconDensity();
+        mIconDpi = activityManager.getLauncherLargeIconDensity();
 
         // need to set mIconDpi before getting default icon
         mDefaultIcon = makeDefaultIcon();
@@ -71,7 +74,8 @@ public class IconCache {
     public Drawable getFullResIcon(Resources resources, int iconId) {
         Drawable d;
         try {
-            d = resources.getDrawableForDensity(iconId, mIconDpi);
+            //d = resources.getDrawableForDensity(iconId, mIconDpi);
+            d = resources.getDrawable(iconId);
         } catch (Resources.NotFoundException e) {
             d = null;
         }
@@ -92,14 +96,21 @@ public class IconCache {
             }
         }
         return getFullResDefaultActivityIcon();
+        
     }
 
     public Drawable getFullResIcon(ResolveInfo info) {
-        return getFullResIcon(info.activityInfo);
+        Drawable d =  getFullResIcon(info.activityInfo);
+        if(!(d instanceof BitmapDrawable)){
+        	Log.v(TAG, info.resolvePackageName);
+        }else{
+        	Log.v(TAG, "is BitmapDrawable"+info.resolvePackageName);
+        }
+        return d;
     }
 
     public Drawable getFullResIcon(ActivityInfo info) {
-
+    	//return info.loadIcon(mPackageManager);
         Resources resources;
         try {
             resources = mPackageManager.getResourcesForApplication(
@@ -209,9 +220,8 @@ public class IconCache {
             if (entry.title == null) {
                 entry.title = info.activityInfo.name;
             }
-
-            entry.icon = Utilities.createIconBitmap(
-                    getFullResIcon(info), mContext);
+            Log.v("IconCustomizer", entry.title);
+            entry.icon = Utilities.createIconBitmap(getFullResIcon(info), mContext);
         }
         return entry;
     }

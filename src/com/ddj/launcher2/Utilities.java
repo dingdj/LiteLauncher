@@ -27,12 +27,14 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
+import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import com.ddj.launcher.R;
 
@@ -87,6 +89,92 @@ final class Utilities {
             return createIconBitmap(new BitmapDrawable(resources, icon), context);
         }
     }
+    
+    /**
+	 * 修复Bitmap清晰度问题
+	 * @param icon
+	 * @param context
+	 * @return Bitmap
+	 */
+	public static Bitmap createIconBitmapThumbnail(Drawable icon, Context context) {
+		if (null == icon)
+			return null;
+		synchronized (sCanvas) {
+			if (sIconWidth <= 0 || sIconHeight <= 0) {
+				final Resources resources = context.getResources();
+				sIconWidth = sIconHeight = (int) resources.getDimensionPixelSize(R.dimen.app_icon_size);
+				
+			}
+
+			int width = sIconWidth;
+			int height = sIconHeight;
+
+			if (icon instanceof FastBitmapDrawable) {
+				icon = new BitmapDrawable(context.getResources(), ((FastBitmapDrawable) icon).getBitmap());
+			}
+
+			if (icon instanceof PaintDrawable) {
+				PaintDrawable painter = (PaintDrawable) icon;
+				painter.setIntrinsicWidth(width);
+				painter.setIntrinsicHeight(height);
+			} else if (icon instanceof BitmapDrawable) {
+				// Ensure the bitmap has a density.
+				BitmapDrawable bitmapDrawable = (BitmapDrawable) icon;
+				Bitmap bitmap = bitmapDrawable.getBitmap();
+				if (bitmap.getDensity() == Bitmap.DENSITY_NONE) {
+					bitmapDrawable.setTargetDensity(context.getResources().getDisplayMetrics());
+				}
+			}
+			int iconWidth = icon.getIntrinsicWidth();
+			int iconHeight = icon.getIntrinsicHeight();
+
+			if (width < iconWidth || height < iconHeight) {
+				final float ratio = (float) iconWidth / iconHeight;
+
+				if (iconWidth > iconHeight) {
+					height = (int) (width / ratio);
+				} else if (iconHeight > iconWidth) {
+					width = (int) (height * ratio);
+				}
+
+				final Bitmap.Config c = icon.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565;
+				final Bitmap thumb = Bitmap.createBitmap(sIconWidth, sIconHeight, c);
+				final Canvas canvas = sCanvas;
+				canvas.setBitmap(thumb);
+				sOldBounds.set(icon.getBounds());
+				final int x = (sIconWidth - width) / 2;
+				final int y = (sIconHeight - height) / 2;
+				icon.setBounds(x, y, x + width, y + height);
+				icon.draw(canvas);
+				icon.setBounds(sOldBounds);
+				return thumb;
+			} else if (iconWidth < width && iconHeight < height) {
+				final Bitmap.Config c = Bitmap.Config.ARGB_8888;
+				final Bitmap thumb = Bitmap.createBitmap(sIconWidth, sIconHeight, c);
+				final Canvas canvas = sCanvas;
+				canvas.setBitmap(thumb);
+				sOldBounds.set(icon.getBounds());
+				icon.setBounds(0, 0, width, height);
+				icon.draw(canvas);
+				icon.setBounds(sOldBounds);
+				return thumb;
+			} else if (icon instanceof BitmapDrawable) {
+				// Log.i(TAG, "icon instanceof BitmapDrawable");
+				return ((BitmapDrawable) icon).getBitmap();
+			} else {
+				final Bitmap.Config c = Bitmap.Config.ARGB_8888;
+				final Bitmap thumb = Bitmap.createBitmap(sIconWidth, sIconHeight, c);
+				final Canvas canvas = sCanvas;
+				canvas.setBitmap(thumb);
+				sOldBounds.set(icon.getBounds());
+				icon.setBounds(0, 0, width, height);
+				icon.draw(canvas);
+				icon.setBounds(sOldBounds);
+				return thumb;
+			}
+		}
+	}
+    
 
     /**
      * Returns a bitmap suitable for the all apps view.
@@ -138,13 +226,21 @@ final class Utilities {
             final Bitmap bitmap = Bitmap.createBitmap(textureWidth, textureHeight,
                     Bitmap.Config.ARGB_8888);
             final Canvas canvas = sCanvas;
+            float scaleRadio = getScaleRadio((BitmapDrawable)icon, sourceWidth, sourceHeight, sIconTextureWidth, textureHeight);
+            icon.setBounds(0, 0, sourceWidth, sourceHeight);
             canvas.setBitmap(bitmap);
+            canvas.save();
+            canvas.translate((sIconTextureWidth - sourceWidth*scaleRadio) / 2.0F, (sIconTextureHeight - sourceHeight*scaleRadio) / 2.0F);
+            canvas.scale(scaleRadio, scaleRadio);
+            icon.draw(canvas);
+            canvas.restore();
+            canvas.setBitmap(null);
 
-            final int left = (textureWidth-width) / 2;
+            /*final int left = (textureWidth-width) / 2;
             final int top = (textureHeight-height) / 2;
 
             @SuppressWarnings("all") // suppress dead code warning
-            final boolean debug = false;
+            final boolean debug = true;
             if (debug) {
                 // draw a big box for the icon for debugging
                 canvas.drawColor(sColors[sColorIndex]);
@@ -158,7 +254,7 @@ final class Utilities {
             icon.setBounds(left, top, left+width, top+height);
             icon.draw(canvas);
             icon.setBounds(sOldBounds);
-            canvas.setBitmap(null);
+            canvas.setBitmap(null);*/
 
             return bitmap;
         }
@@ -237,7 +333,8 @@ final class Utilities {
         final DisplayMetrics metrics = resources.getDisplayMetrics();
         final float density = metrics.density;
 
-        sIconWidth = sIconHeight = (int) resources.getDimension(R.dimen.app_icon_size);
+        
+        sIconWidth = sIconHeight = 48;//getIconSize(metrics.densityDpi);
         sIconTextureWidth = sIconTextureHeight = sIconWidth;
 
         sBlurPaint.setMaskFilter(new BlurMaskFilter(5 * density, BlurMaskFilter.Blur.NORMAL));
@@ -271,5 +368,136 @@ final class Utilities {
 
     static int generateRandomId() {
         return new Random(System.currentTimeMillis()).nextInt(1 << 24);
+    }
+    
+    private static int getIconSize(int sDensity)
+    {
+      switch (sDensity)
+      {
+      default:
+        int i = 90 * sDensity / 240;
+        return i + i % 2;
+      case 480:
+        return 192;
+      case 320:
+      }
+      return 136;
+    }
+    
+    private static float getScaleRadio(BitmapDrawable drawable, int sw, int sh, int dw, int dh){
+    	float radioW = dw/(sw+0.0F);
+    	float radioH = dh/(sh+0.0F);
+    	float f3 = getContentRatio(drawable);
+    	//printStackForDebug();
+        Log.d("IconCustomizer", "Content Ratio = " + f3);
+        if ((f3 > 0.0F) && (f3 <= 2.0F))
+          return 0.9F * f3;
+    	return Math.min(1.0F, Math.min(radioW, radioH));
+    }
+    
+    private static float getContentRatio(Drawable drawable)
+    {
+        if(drawable instanceof BitmapDrawable)
+        {
+            Bitmap bitmap = ((BitmapDrawable)drawable).getBitmap();
+            float f = getEdgePosition(bitmap, true, false);
+            if(f >= 0.0F)
+            {
+                float f1 = getEdgePosition(bitmap, true, true);
+                if(f1 >= 0.0F)
+                {
+                    float f2 = getEdgePosition(bitmap, false, false);
+                    if(f2 >= 0.0F)
+                    {
+                        float f3 = getEdgePosition(bitmap, false, true);
+                        if(f3 >= 0.0F)
+                            return Math.min((float)sIconWidth / (1.0F + (f3 - f2)), (float)sIconHeight / (1.0F + (f1 - f)));
+                    }
+                }
+            }
+        }
+        return -1F;
+    }
+    
+    public static int getEdgePosition(Bitmap bitmap, boolean flag, boolean flag1){
+    	int w = bitmap.getWidth();
+    	int h = bitmap.getHeight();
+    	if(flag){//计算高度
+    		if(flag1){//计算从底部开始
+    			return getPosition(bitmap, h-1, w);
+    		}else{//计算从顶部开始
+    			return getPositionReverse(bitmap, h-1, w);
+    		}
+    	}else{//计算宽度
+    		if(flag1){//计算从右边开始
+    			return getPosition(bitmap, w-1, h);
+    		}else{//计算从左边开始
+    			return getPositionReverse(bitmap, w-1, h);
+    		}
+    	}
+    }
+    
+    /**
+     * outSideMax 外层循环最大值 h-1
+     * inSideMax 内层循环最大值
+     * @author dingdj
+     * Date:2013-12-26下午3:18:58
+     * @param outSideMax
+     * @return
+     */
+    private static int getPosition(Bitmap bitmap, int outSideMax, int insideMax){
+    	int j = outSideMax;
+		 for(; j>outSideMax/2; j--){
+			int rtn = 0;
+			for(int i=0; i<insideMax; i++){
+				if(bitmap.getPixel(i, j) >>>24 > 50){//如果该像素的alpha值小于50
+					rtn++;
+				}
+				if(rtn > 0){//有像素透明度大于50 判断这是边界
+					return j;
+				}
+			}
+		 }
+		 return -1;
+    }
+    
+    
+    
+    
+    /**
+     * outSideMax 外层循环最大值 h-1
+     * inSideMax 内层循环最大值
+     * @author dingdj
+     * Date:2013-12-26下午3:18:58
+     * @param outSideMax
+     * @return
+     */
+    private static int getPositionReverse(Bitmap bitmap, int outSideMax, int insideMax){
+    	int j = 0;
+		 for(; j<outSideMax/2; j++){
+			int rtn = 0;
+			for(int i=0; i<insideMax; i++){
+				if(bitmap.getPixel(i, j) >>>24 > 50){//如果该像素的alpha值大于50
+					rtn++;
+				}
+				if(rtn > 0){//有像素透明度大于50 判断这是边界
+					return j;
+				}
+			}
+		 }
+		 return -1;
+    }
+    
+    /**
+     * 构建一个异常 打出堆栈
+     * @author dingdj
+     * Date:2013-12-26下午5:34:59
+     */
+    public static void printStackForDebug(){
+    	try{
+    		throw new IllegalArgumentException("fake Exception");
+    	}catch(Exception e){
+    		e.printStackTrace();
+    	}
     }
 }

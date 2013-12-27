@@ -69,7 +69,7 @@ import java.util.Set;
  * for the Launcher.
  */
 public class LauncherModel extends BroadcastReceiver {
-    static final boolean DEBUG_LOADERS = false;
+    static final boolean DEBUG_LOADERS = true;
     static final String TAG = "Launcher.Model";
 
     private static final int ITEMS_CHUNK = 6; // batch size for the workspace icons
@@ -924,6 +924,9 @@ public class LauncherModel extends BroadcastReceiver {
                 isLaunching = isLaunching || stopLoaderLocked();
                 mLoaderTask = new LoaderTask(mApp, isLaunching);
                 if (synchronousBindPage > -1 && mAllAppsLoaded && mWorkspaceLoaded) {
+                	 if (DEBUG_LOADERS) {
+                         Log.d(TAG, "mAllAppsLoaded=true");
+                     }
                     mLoaderTask.runBindSynchronousPage(synchronousBindPage);
                 } else {
                     sWorkerThread.setPriority(Thread.NORM_PRIORITY);
@@ -1259,7 +1262,7 @@ public class LauncherModel extends BroadcastReceiver {
             final AppWidgetManager widgets = AppWidgetManager.getInstance(context);
             final boolean isSafeMode = manager.isSafeMode();
 
-            // Make sure the default workspace is loaded, if needed
+            // Make sure the default workspace is loaded, if needed 准备数据
             mApp.getLauncherProvider().loadDefaultFavoritesIfNecessary(0);
 
             synchronized (sBgLock) {
@@ -1719,6 +1722,7 @@ public class LauncherModel extends BroadcastReceiver {
             }
 
             final boolean isLoadingSynchronously = (synchronizeBindPage > -1);
+            Log.w(TAG, "isLoadingSynchronously="+isLoadingSynchronously);
             final int currentScreen = isLoadingSynchronously ? synchronizeBindPage :
                 oldCallbacks.getCurrentWorkspaceScreen();
 
