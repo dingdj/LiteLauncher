@@ -34,6 +34,8 @@ public class BubbleViewHelper {
      */
     private int iconSize;
     
+    private int folderIconHeight;
+    
     /**
      * 文字占的高度
      */
@@ -61,6 +63,7 @@ public class BubbleViewHelper {
 		gap = 1;
 		text2IconPadding = 3;
 		iconSize = context.getResources().getDimensionPixelSize(R.dimen.app_icon_size);
+		folderIconHeight = context.getResources().getDimensionPixelSize(R.dimen.folder_preview_size);
 	}
 	
 	public static BubbleViewHelper getInstance(Context context){
@@ -142,7 +145,7 @@ public class BubbleViewHelper {
 	}
 	
 	public int getTextPaddingTop() {
-		return text2IconPadding+gap+gap;
+		return text2IconPadding - ((folderIconHeight-iconSize)/2)-1;
 	}
 	
 	/**

@@ -551,9 +551,8 @@ public class Workspace extends SmoothPagedView
         } else {
             // Show folder title if not in the hotseat
             if (child instanceof FolderIcon) {
-                ((FolderIcon) child).setTextVisible(true);
                 FolderIcon icon = (FolderIcon)child;
-                icon.setTextVisible(false);
+                icon.setTextVisible(true);
                 Context context = child.getContext();
                 BubbleViewHelper.getInstance(context).calcDrawParams(
 	        			CellLayoutHelper.getInstance().getCellW(), 
