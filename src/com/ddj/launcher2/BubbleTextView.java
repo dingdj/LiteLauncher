@@ -17,23 +17,29 @@
 package com.ddj.launcher2;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Rect;
-import android.graphics.Region;
 import android.graphics.Region.Op;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.widget.TextView;
+import android.view.View;
+
+import com.ddj.launcher.R;
+import com.ddj.launcher2.util.BubbleViewHelper;
+import com.ddj.launcher2.util.StringUtils;
 
 /**
  * TextView that draws a bubble behind the text. We cannot use a LineBackgroundSpan
  * because we want to make the bubble taller than the text and TextView's clip is
  * too aggressive.
  */
-public class BubbleTextView extends TextView {
+public class BubbleTextView extends View {
+	
+	static final String TAG = "BubbleTextView";
     static final float CORNER_RADIUS = 4.0f;
     static final float SHADOW_LARGE_RADIUS = 4.0f;
     static final float SHADOW_SMALL_RADIUS = 1.75f;
@@ -46,21 +52,63 @@ public class BubbleTextView extends TextView {
     private int mPrevAlpha = -1;
 
     private final HolographicOutlineHelper mOutlineHelper = new HolographicOutlineHelper();
-    private final Canvas mTempCanvas = new Canvas();
     private final Rect mTempRect = new Rect();
-    private boolean mDidInvalidateForPressedState;
     private Bitmap mPressedOrFocusedBackground;
-    private int mFocusedOutlineColor;
-    private int mFocusedGlowColor;
-    private int mPressedOutlineColor;
-    private int mPressedGlowColor;
-
-    private boolean mBackgroundSizeChanged;
     private Drawable mBackground;
 
-    private boolean mStayPressed;
     private CheckLongPressHelper mLongPressHelper;
-
+    
+    private Paint textPaint, iconPaint;
+    
+    private Rect iconRect = new Rect();
+  
+	/**
+	 * 显示用的图标标签
+	 */
+	private CharSequence text;
+	/**
+	 * 实际保存的标签
+	 */
+	private CharSequence savedText;
+	
+    /**
+     * 图片大小
+     */
+    private int iconSize;
+    
+    /**
+     * 文字占宽度
+     */
+    private int textWidth;
+    
+    /**
+     * 文字的高度
+     */
+    private int textHeight;
+    
+    /**
+     * 文字的padding
+     */
+    private int textTopPadding;
+    
+    /**
+     * 文字离左边的距离
+     */
+    private int textLeft = -1;
+    
+    /**
+     * 是否显示文字
+     */
+    private boolean showText = true;
+    
+    private float scaleSize = -1;
+    
+    private float iconCenterX;
+    
+    private int iconTop = -1;
+    
+    private Drawable drawable;
+   
     public BubbleTextView(Context context) {
         super(context);
         init();
@@ -76,33 +124,77 @@ public class BubbleTextView extends TextView {
         init();
     }
 
+    /**
+     * 初始化参数
+     * @author dingdj
+     * Date:2014-2-27上午11:30:30
+     */
     private void init() {
         mLongPressHelper = new CheckLongPressHelper(this);
         mBackground = getBackground();
-
-        final Resources res = getContext().getResources();
-        mFocusedOutlineColor = mFocusedGlowColor = mPressedOutlineColor = mPressedGlowColor =
-            res.getColor(android.R.color.white);
-
-        setShadowLayer(SHADOW_LARGE_RADIUS, 0.0f, SHADOW_Y_OFFSET, SHADOW_LARGE_COLOUR);
+		textPaint = BubbleViewHelper.getInstance(mContext).getTextPaint();
+		textHeight = BubbleViewHelper.getInstance(mContext).getTextHeight();
+		iconPaint = BubbleViewHelper.getInstance(mContext).getIconPaint();
+		iconSize = getContext().getResources().getDimensionPixelSize(R.dimen.app_icon_size);
     }
+    
+    @Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+
+		int widthSize = right - left;
+		int heightSize = bottom - top;
+		BubbleViewHelper.getInstance(mContext).calcDrawParams(widthSize, heightSize, (!StringUtils.isEmpty(text) && isShowText()));
+		scaleSize = BubbleViewHelper.getInstance(mContext).getScaleSize();
+		iconCenterX = BubbleViewHelper.getInstance(mContext).getIconCenterX();
+		iconRect.top = BubbleViewHelper.getInstance(mContext).getIconRect().top;
+		iconRect.bottom = BubbleViewHelper.getInstance(mContext).getIconRect().bottom;
+		iconRect.left = BubbleViewHelper.getInstance(mContext).getIconRect().left;
+		iconRect.right = BubbleViewHelper.getInstance(mContext).getIconRect().right;
+		iconTop = iconRect.top;
+		textTopPadding = BubbleViewHelper.getInstance(mContext).getTextTop();
+	}
+    
+    
+    @Override
+	protected void onDraw(Canvas canvas) {
+    	super.onDraw(canvas);
+		/**
+		 * 去除画布锯齿
+		 */
+		canvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+        int saveCount = -1;
+		if (scaleSize != -1) {
+			saveCount = canvas.save();
+			canvas.scale(scaleSize, scaleSize, iconCenterX, 0);
+		}
+		drawingContent(canvas);
+		if(saveCount != -1){
+			canvas.restoreToCount(saveCount);
+		}
+	}
+    
+    /**
+	 * 应用程序内容，ICON与TITLE
+	 */
+	private void drawingContent(Canvas canvas) {
+		/**
+		 * 画图标
+		 */
+		if (drawable != null) {
+			drawable.setBounds(iconRect);
+			drawable.draw(canvas);
+		}
+
+		if (!StringUtils.isEmpty(text) && isShowText()) {
+			canvas.drawText(text.toString(), getTextLeft(), textTopPadding, textPaint);
+		}
+	}
 
     public void applyFromShortcutInfo(ShortcutInfo info, IconCache iconCache) {
-        Bitmap b = info.getIcon(iconCache);
-
-        setCompoundDrawablesWithIntrinsicBounds(null,
-                new FastBitmapDrawable(b),
-                null, null);
+    	drawable = new FastBitmapDrawable(info.getIcon(iconCache));
         setText(info.title);
         setTag(info);
-    }
-
-    @Override
-    protected boolean setFrame(int left, int top, int right, int bottom) {
-        if (getLeft() != left || getRight() != right || getTop() != top || getBottom() != bottom) {
-            mBackgroundSizeChanged = true;
-        }
-        return super.setFrame(left, top, right, bottom);
     }
 
     @Override
@@ -120,7 +212,7 @@ public class BubbleTextView extends TextView {
 
     @Override
     protected void drawableStateChanged() {
-        if (isPressed()) {
+        /*if (isPressed()) {
             // In this case, we have already created the pressed outline on ACTION_DOWN,
             // so we just need to do an invalidate to trigger draw
             if (!mDidInvalidateForPressedState) {
@@ -154,7 +246,7 @@ public class BubbleTextView extends TextView {
         Drawable d = mBackground;
         if (d != null && d.isStateful()) {
             d.setState(getDrawableState());
-        }
+        }*/
         super.drawableStateChanged();
     }
 
@@ -169,8 +261,8 @@ public class BubbleTextView extends TextView {
         getDrawingRect(clipRect);
 
         // adjust the clip rect so that we don't include the text label
-        clipRect.bottom =
-            getExtendedPaddingTop() - (int) BubbleTextView.PADDING_V + getLayout().getLineTop(0);
+       /* clipRect.bottom =
+            getExtendedPaddingTop() - (int) BubbleTextView.PADDING_V + getLayout().getLineTop(0);*/
 
         // Draw the View into the bitmap.
         // The translate of scrollX and scrollY is necessary when drawing TextViews, because
@@ -212,7 +304,7 @@ public class BubbleTextView extends TextView {
                 // So that the pressed outline is visible immediately when isPressed() is true,
                 // we pre-create it on ACTION_DOWN (it takes a small but perceptible amount of time
                 // to create it)
-                if (mPressedOrFocusedBackground == null) {
+                /*if (mPressedOrFocusedBackground == null) {
                     mPressedOrFocusedBackground = createGlowingOutline(
                             mTempCanvas, mPressedGlowColor, mPressedOutlineColor);
                 }
@@ -223,7 +315,7 @@ public class BubbleTextView extends TextView {
                     setCellLayoutPressedOrFocusedIcon();
                 } else {
                     mDidInvalidateForPressedState = false;
-                }
+                }*/
 
                 mLongPressHelper.postCheckForLongPress();
                 break;
@@ -242,10 +334,6 @@ public class BubbleTextView extends TextView {
     }
 
     void setStayPressed(boolean stayPressed) {
-        mStayPressed = stayPressed;
-        if (!stayPressed) {
-            mPressedOrFocusedBackground = null;
-        }
         setCellLayoutPressedOrFocusedIcon();
     }
 
@@ -272,10 +360,10 @@ public class BubbleTextView extends TextView {
         return HolographicOutlineHelper.MAX_OUTER_BLUR_RADIUS / 2;
     }
 
-    @Override
+    /* @Override
     public void draw(Canvas canvas) {
         final Drawable background = mBackground;
-        if (background != null) {
+        if (false && background != null) {
             final int scrollX = getScrollX();
             final int scrollY = getScrollY();
 
@@ -310,7 +398,7 @@ public class BubbleTextView extends TextView {
         getPaint().setShadowLayer(SHADOW_SMALL_RADIUS, 0.0f, 0.0f, SHADOW_SMALL_COLOUR);
         super.draw(canvas);
         canvas.restore();
-    }
+    }*/
 
     @Override
     protected void onAttachedToWindow() {
@@ -339,4 +427,81 @@ public class BubbleTextView extends TextView {
 
         mLongPressHelper.cancelLongPress();
     }
+    
+    public void setText(CharSequence text) {
+		savedText = text;
+		this.text = text;
+		if (text != null && "".equals(text))
+			textWidth = 0;
+		else {
+			textWidth = (int) textPaint.measureText(text.toString());
+			if (getWidth() != 0 && textWidth > getWidth()) {
+				int mid = 0;
+				for (int i = 0; i < text.length(); i++) {
+					int len = (int) textPaint.measureText(text, 0, i);
+					if (len > getWidth()) {
+						mid = i;
+						break;
+					}
+				}
+				if (mid != 0) {
+					this.text = text.subSequence(0, mid - 1);
+				} else {
+					this.text = text;
+				}
+				textWidth = getWidth();
+			}
+		}
+	}
+    
+    
+    private float getTextLeft() {
+		if (getWidth() == 0)
+			return 0;
+
+		final int width = getWidth();
+		textLeft = (width - textWidth) / 2;
+		if (textLeft < 0)
+			textLeft = 0;
+
+		return textLeft;
+	}
+    
+    public void setIcon(Drawable drawable){
+    	this.drawable = drawable;
+    }
+    
+    public void setIconBitmap(Bitmap bitmap){
+    	drawable = new FastBitmapDrawable(bitmap);
+    }
+
+	public Drawable getIcon() {
+		return drawable;
+	}
+
+	public boolean isShowText() {
+		return showText;
+	}
+
+	public void setShowText(boolean showText) {
+		this.showText = showText;
+	}
+
+	public int getIconTop() {
+		return iconTop;
+	}
+
+	public int getIconSize() {
+		return iconSize;
+	}
+
+	public Rect getIconRect() {
+		return iconRect;
+	}
+	
+	
+	
+	
+	
+	
 }

@@ -50,11 +50,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.LinearLayout.LayoutParams;
 
 import com.ddj.launcher.R;
 import com.ddj.launcher2.FolderIcon.FolderRingAnimator;
 import com.ddj.launcher2.LauncherSettings.Favorites;
+import com.ddj.launcher2.debug.Debug;
+import com.ddj.launcher2.util.BubbleViewHelper;
+import com.ddj.launcher2.util.CellLayoutHelper;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -522,7 +527,17 @@ public class Workspace extends SmoothPagedView
 
             // Hide folder title in the hotseat
             if (child instanceof FolderIcon) {
-                ((FolderIcon) child).setTextVisible(false);
+            	FolderIcon icon = (FolderIcon)child;
+                icon.setTextVisible(false);
+                Context context = child.getContext();
+                BubbleViewHelper.getInstance(context).calcDrawParams(
+                		context.getResources().getDimensionPixelSize(R.dimen.hotseat_cell_width), 
+                		context.getResources().getDimensionPixelSize(R.dimen.hotseat_cell_height), 
+	        			false);
+                icon.marginTop = BubbleViewHelper.getInstance(context).getIconRect().top;
+        		LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams) icon.getmPreviewBackground().getLayoutParams();
+        		lp.setMargins(0, icon.marginTop, 0, 0);
+        		icon.getmPreviewBackground().setLayoutParams(lp);
             }
 
             if (screen < 0) {
@@ -537,6 +552,17 @@ public class Workspace extends SmoothPagedView
             // Show folder title if not in the hotseat
             if (child instanceof FolderIcon) {
                 ((FolderIcon) child).setTextVisible(true);
+                FolderIcon icon = (FolderIcon)child;
+                icon.setTextVisible(false);
+                Context context = child.getContext();
+                BubbleViewHelper.getInstance(context).calcDrawParams(
+	        			CellLayoutHelper.getInstance().getCellW(), 
+	        			CellLayoutHelper.getInstance().getCellH(), 
+	        			true);
+                icon.marginTop = BubbleViewHelper.getInstance(context).getIconRect().top;
+        		LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams) icon.getmPreviewBackground().getLayoutParams();
+        		lp.setMargins(0, icon.marginTop, 0, 0);
+        		icon.getmPreviewBackground().setLayoutParams(lp);
             }
 
             layout = (CellLayout) getChildAt(screen);
@@ -1784,8 +1810,8 @@ public class Workspace extends SmoothPagedView
                 }
             } else if (v instanceof BubbleTextView) {
                 final BubbleTextView tv = (BubbleTextView) v;
-                clipRect.bottom = tv.getExtendedPaddingTop() - (int) BubbleTextView.PADDING_V +
-                        tv.getLayout().getLineTop(0);
+                /*clipRect.bottom = tv.getExtendedPaddingTop() - (int) BubbleTextView.PADDING_V +
+                        tv.getLayout().getLineTop(0);*/
             } else if (v instanceof TextView) {
                 final TextView tv = (TextView) v;
                 clipRect.bottom = tv.getExtendedPaddingTop() - tv.getCompoundDrawablePadding() +
@@ -3009,6 +3035,7 @@ public class Workspace extends SmoothPagedView
      */
     private void onDropExternal(final int[] touchXY, final Object dragInfo,
             final CellLayout cellLayout, boolean insertAtFirst, DragObject d) {
+    	Log.e(TAG, "onDropExternal");
         final Runnable exitSpringLoadedRunnable = new Runnable() {
             @Override
             public void run() {
@@ -3034,6 +3061,7 @@ public class Workspace extends SmoothPagedView
         }
 
         if (info instanceof PendingAddItemInfo) {
+        	Log.e(TAG, "PendingAddItemInfo");
             final PendingAddItemInfo pendingInfo = (PendingAddItemInfo) dragInfo;
 
             boolean findNearestVacantCell = true;
@@ -3110,6 +3138,7 @@ public class Workspace extends SmoothPagedView
             animateWidgetDrop(info, cellLayout, d.dragView, onAnimationCompleteRunnable,
                     animationStyle, finalView, true);
         } else {
+        	Log.e(TAG, "other");
             // This is for other drag/drop cases, like dragging from All Apps
             View view = null;
 

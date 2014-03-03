@@ -23,6 +23,8 @@
     package="com.ddj.launcher">
 
     <original-package android:name="com.ddj.launcher2" />
+    
+    <uses-sdk android:minSdkVersion="7"></uses-sdk>
 
     <permission
         android:name="com.android.launcher.permission.PRELOAD_WORKSPACE"
@@ -65,10 +67,9 @@
     <application
         android:name="com.ddj.launcher2.LauncherApplication"
         android:label="@string/application_name"
-        android:icon="@mipmap/ic_launcher_home"
+        android:icon="@drawable/ic_launcher_home"
         android:hardwareAccelerated="true"
-        android:largeHeap="@bool/config_largeHeap"
-        android:supportsRtl="true">
+        android:largeHeap="@bool/config_largeHeap">
         <activity
             android:name="com.ddj.launcher2.Launcher"
             android:launchMode="singleTask"

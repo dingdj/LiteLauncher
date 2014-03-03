@@ -69,7 +69,6 @@
          external icon width/height above to compensate -->
     <dimen name="apps_customize_tab_bar_height">52dp</dimen>
     <dimen name="apps_customize_tab_bar_margin_top">0dp</dimen>
-    <dimen name="app_icon_size">48dp</dimen>
     <!-- The width can be 72dp because we don't have L/R padding -->
     <dimen name="apps_customize_cell_width">74dp</dimen>
     <dimen name="apps_customize_cell_height">82dp</dimen>
@@ -118,9 +117,9 @@
 
 <!-- Folders -->
     <!-- The size of the image which sits behind the preview of the folder contents -->
-    <dimen name="folder_preview_size">62dp</dimen>
+    <dimen name="folder_preview_size">54dp</dimen>
     <!-- The amount that the preview contents are inset from the preview background -->
-    <dimen name="folder_preview_padding">4dp</dimen>
+    <dimen name="folder_preview_padding">2dp</dimen>
     <dimen name="folder_name_padding">10dp</dimen>
     <dimen name="folder_width_gap">0dp</dimen>
     <dimen name="folder_height_gap">0dp</dimen>
@@ -155,4 +154,12 @@
     <dimen name="workspace_width_gap_port">0dp</dimen>
     <dimen name="workspace_height_gap_land">0dp</dimen>
     <dimen name="workspace_height_gap_port">0dp</dimen>
+    
+    <!-- workspace -->
+	<dimen name="workspaceEndPadding">100dip</dimen>
+	<dimen name="workspaceStartPadding">40dip</dimen>
+	
+	<!--  icon view-->
+	<dimen name="app_icon_size">52dip</dimen>
+	<dimen name="app_icon_text_size">12dip</dimen>
 </resources>

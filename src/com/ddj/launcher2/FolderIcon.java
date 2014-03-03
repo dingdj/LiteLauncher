@@ -22,13 +22,17 @@ import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
+import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -42,6 +46,10 @@ import android.widget.TextView;
 import com.ddj.launcher.R;
 import com.ddj.launcher2.DropTarget.DragObject;
 import com.ddj.launcher2.FolderInfo.FolderListener;
+import com.ddj.launcher2.LauncherSettings.Favorites;
+import com.ddj.launcher2.util.BubbleViewHelper;
+import com.ddj.launcher2.util.CellLayoutHelper;
+import com.ddj.launcher2.util.StringUtils;
 
 import java.util.ArrayList;
 
@@ -79,7 +87,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
     public static Drawable sSharedFolderLeaveBehind = null;
 
     private ImageView mPreviewBackground;
-    private BubbleTextView mFolderName;
+    private TextView mFolderName;
 
     FolderRingAnimator mFolderRingAnimator = null;
 
@@ -94,6 +102,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
     private int mPreviewOffsetY;
     private float mMaxPerspectiveShift;
     boolean mAnimating = false;
+    int marginTop;
 
     private PreviewItemDrawingParams mParams = new PreviewItemDrawingParams(0, 0, 0, 0);
     private PreviewItemDrawingParams mAnimParams = new PreviewItemDrawingParams(0, 0, 0, 0);
@@ -132,8 +141,14 @@ public class FolderIcon extends LinearLayout implements FolderListener {
 
         FolderIcon icon = (FolderIcon) LayoutInflater.from(launcher).inflate(resId, group, false);
 
-        icon.mFolderName = (BubbleTextView) icon.findViewById(R.id.folder_icon_name);
-        icon.mFolderName.setText(folderInfo.title);
+        icon.mFolderName = (TextView) icon.findViewById(R.id.folder_icon_name);
+        TextPaint textPaint = icon.mFolderName.getPaint();
+        BubbleViewHelper.configTextPaint(launcher, textPaint);
+        if(StringUtils.isEmpty(folderInfo.title)){
+        	icon.mFolderName.setText(launcher.getResources().getString(R.string.default_folder_name));
+        }else{
+        	icon.mFolderName.setText(folderInfo.title);
+        }
         icon.mPreviewBackground = (ImageView) icon.findViewById(R.id.preview_background);
 
         icon.setTag(folderInfo);
@@ -150,6 +165,25 @@ public class FolderIcon extends LinearLayout implements FolderListener {
 
         icon.mFolderRingAnimator = new FolderRingAnimator(launcher, icon);
         folderInfo.addListener(icon);
+        
+        if(folder != null){
+        	if(folderInfo.container != Favorites.CONTAINER_HOTSEAT){
+	        	BubbleViewHelper.getInstance(launcher).calcDrawParams(
+	        			CellLayoutHelper.getInstance().getCellW(), 
+	        			CellLayoutHelper.getInstance().getCellH(), 
+	        			true);
+        	}else{
+        		BubbleViewHelper.getInstance(launcher).calcDrawParams(
+	        			launcher.getResources().getDimensionPixelSize(R.dimen.hotseat_cell_width), 
+	        			launcher.getResources().getDimensionPixelSize(R.dimen.hotseat_cell_height), 
+	        			false);
+        	}
+        	icon.marginTop = BubbleViewHelper.getInstance(launcher).getIconRect().top;
+    		LinearLayout.LayoutParams lp = (LayoutParams) icon.mPreviewBackground.getLayoutParams();
+    		lp.setMargins(0, icon.marginTop, 0, 0);
+    		icon.mPreviewBackground.setLayoutParams(lp);
+    		icon.mFolderName.setPadding(0, BubbleViewHelper.getInstance(launcher).getTextPaddingTop(), 0, 0);
+        }
 
         return icon;
     }
@@ -163,6 +197,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
     public static class FolderRingAnimator {
         public int mCellX;
         public int mCellY;
+
         private CellLayout mCellLayout;
         public float mOuterRingSize;
         public float mInnerRingSize;
@@ -186,7 +221,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
             // We need to reload the static values when configuration changes in case they are
             // different in another configuration
             if (sStaticValuesDirty) {
-                sPreviewSize = res.getDimensionPixelSize(R.dimen.folder_preview_size);
+            	sPreviewSize = res.getDimensionPixelSize(R.dimen.folder_preview_size);
                 sPreviewPadding = res.getDimensionPixelSize(R.dimen.folder_preview_padding);
                 sSharedOuterRingDrawable = res.getDrawable(R.drawable.portal_ring_outer_holo);
                 sSharedInnerRingDrawable = res.getDrawable(R.drawable.portal_ring_inner_holo);
@@ -323,21 +358,28 @@ public class FolderIcon extends LinearLayout implements FolderListener {
             float scaleRelativeToDragLayer, Runnable postAnimationRunnable) {
 
         // These correspond two the drawable and view that the icon was dropped _onto_
-        Drawable animateDrawable = ((TextView) destView).getCompoundDrawables()[1];
+        /*Drawable animateDrawable = (destView).getCompoundDrawables()[1];
         computePreviewDrawingParams(animateDrawable.getIntrinsicWidth(),
-                destView.getMeasuredWidth());
+                destView.getMeasuredWidth());*/
 
         // This will animate the first item from it's position as an icon into its
         // position as the first item in the preview
-        animateFirstItem(animateDrawable, INITIAL_ITEM_ANIMATION_DURATION, false, null);
+        //animateFirstItem(animateDrawable, INITIAL_ITEM_ANIMATION_DURATION, false, null);
         addItem(destInfo);
 
         // This will animate the dragView (srcView) into the new folder
+        if(destView instanceof BubbleTextView){
+        	BubbleTextView child = (BubbleTextView)destView;
+        	Rect rect = child.getIconRect();
+        	int iconSize = child.getIconSize();
+        	dstRect.top = dstRect.top + rect.top + iconSize/2;
+        	dstRect.left = dstRect.left + rect.left + iconSize/2;
+        }
         onDrop(srcInfo, srcView, dstRect, scaleRelativeToDragLayer, 1, postAnimationRunnable, null);
     }
 
     public void performDestroyAnimation(final View finalView, Runnable onCompleteRunnable) {
-        Drawable animateDrawable = ((TextView) finalView).getCompoundDrawables()[1];
+        Drawable animateDrawable = ((BubbleTextView) finalView).getIcon();
         computePreviewDrawingParams(animateDrawable.getIntrinsicWidth(), 
                 finalView.getMeasuredWidth());
 
@@ -379,10 +421,13 @@ public class FolderIcon extends LinearLayout implements FolderListener {
                 setScaleX(1.0f);
                 setScaleY(1.0f);
                 scaleRelativeToDragLayer = dragLayer.getDescendantRectRelativeToSelf(this, to);
+                to.top = to.top + marginTop;
                 // Finished computing final animation locations, restore current state
                 setScaleX(scaleX);
                 setScaleY(scaleY);
                 workspace.resetTransitionTransform((CellLayout) getParent().getParent());
+            }else{
+            	to.top = to.top + marginTop;
             }
 
             int[] center = new int[2];
@@ -515,7 +560,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
 
     private void drawPreviewItem(Canvas canvas, PreviewItemDrawingParams params) {
         canvas.save();
-        canvas.translate(params.transX + mPreviewOffsetX, params.transY + mPreviewOffsetY);
+        canvas.translate(params.transX + mPreviewOffsetX, params.transY + mPreviewOffsetY+marginTop);
         canvas.scale(params.scale, params.scale);
         Drawable d = params.drawable;
 
@@ -539,23 +584,23 @@ public class FolderIcon extends LinearLayout implements FolderListener {
 
         ArrayList<View> items = mFolder.getItemsInReadingOrder();
         Drawable d;
-        TextView v;
+        BubbleTextView v;
 
         // Update our drawing parameters if necessary
         if (mAnimating) {
             computePreviewDrawingParams(mAnimParams.drawable);
         } else {
-            v = (TextView) items.get(0);
-            d = v.getCompoundDrawables()[1];
+            v = (BubbleTextView) items.get(0);
+            d = v.getIcon();
             computePreviewDrawingParams(d);
         }
 
         int nItemsInPreview = Math.min(items.size(), NUM_ITEMS_IN_PREVIEW);
         if (!mAnimating) {
             for (int i = nItemsInPreview - 1; i >= 0; i--) {
-                v = (TextView) items.get(i);
+                v = (BubbleTextView) items.get(i);
                 if (!mHiddenItems.contains(v.getTag())) {
-                    d = v.getCompoundDrawables()[1];
+                	d = v.getIcon();
                     mParams = computePreviewItemDrawingParams(i, mParams);
                     mParams.drawable = d;
                     drawPreviewItem(canvas, mParams);
@@ -661,7 +706,12 @@ public class FolderIcon extends LinearLayout implements FolderListener {
     @Override
     public void cancelLongPress() {
         super.cancelLongPress();
-
         mLongPressHelper.cancelLongPress();
     }
+
+	public ImageView getmPreviewBackground() {
+		return mPreviewBackground;
+	}
+    
+    
 }

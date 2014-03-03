@@ -25,8 +25,13 @@ import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.os.Handler;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.util.Global;
 
 import java.lang.ref.WeakReference;
 
@@ -43,11 +48,10 @@ public class LauncherApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        // set sIsScreenXLarge and sScreenDensity *before* creating icon cache
+        
         sIsScreenLarge = getResources().getBoolean(R.bool.is_large_screen);
         sScreenDensity = getResources().getDisplayMetrics().density;
-
+        
         mWidgetPreviewCacheDb = new WidgetPreviewLoader.CacheDb(this);
         mIconCache = new IconCache(this);
         mModel = new LauncherModel(this, mIconCache);
@@ -75,6 +79,7 @@ public class LauncherApplication extends Application {
         ContentResolver resolver = getContentResolver();
         resolver.registerContentObserver(LauncherSettings.Favorites.CONTENT_URI, true,
                 mFavoritesObserver);
+        Global.setContext(this.getBaseContext());
     }
 
     /**
@@ -147,5 +152,19 @@ public class LauncherApplication extends Application {
 
     public static int getLongPressTimeout() {
         return sLongPressTimeout;
+    }
+    
+    /**
+     * 获取屏幕密度
+     * @author dingdj
+     * Date:2014-3-3上午10:26:06
+     *  @return
+     */
+    private float fetchScreenDensity(){
+    	DisplayMetrics metrics = new DisplayMetrics();
+    	final WindowManager windowManager = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
+		final Display display = windowManager.getDefaultDisplay();
+		display.getMetrics(metrics);
+		return metrics.density;
     }
 }

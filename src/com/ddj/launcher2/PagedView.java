@@ -43,6 +43,7 @@ import android.view.animation.Interpolator;
 import android.widget.Scroller;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.debug.Debug;
 
 import java.util.ArrayList;
 
@@ -818,6 +819,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
+    	//Log.e(TAG, "PagedView.dispatchDraw");
         int halfScreenSize = getMeasuredWidth() / 2;
         // mOverScrollX is equal to getScrollX() when we're within the normal scroll range.
         // Otherwise it is equal to the scaled overscroll position.
@@ -1676,6 +1678,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         loadAssociatedPages(page, false);
     }
     protected void loadAssociatedPages(int page, boolean immediateAndOnly) {
+    	//Debug.printStackForDebug();
         if (mContentIsRefreshable) {
             final int count = getChildCount();
             if (page < count) {

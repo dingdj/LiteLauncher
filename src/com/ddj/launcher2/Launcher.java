@@ -17,6 +17,21 @@
 
 package com.ddj.launcher2;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.animation.Animator;
@@ -29,7 +44,9 @@ import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityOptions;
+import android.app.NotificationManager;
 import android.app.SearchManager;
+import android.app.Service;
 import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
@@ -50,10 +67,8 @@ import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -95,25 +110,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-//import com.android.common.Search;
 import com.ddj.launcher.R;
 import com.ddj.launcher2.DropTarget.DragObject;
+import com.ddj.launcher2.debug.Debug;
 import com.ddj.launcher2.debug.MemoryUse;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+//import com.android.common.Search;
 
 /**
  * Default launcher application.
@@ -134,6 +135,7 @@ public final class Launcher extends Activity
     private static final int MENU_MANAGE_APPS = MENU_WALLPAPER_SETTINGS + 1;
     private static final int MENU_SYSTEM_SETTINGS = MENU_MANAGE_APPS + 1;
     private static final int MENU_HELP = MENU_SYSTEM_SETTINGS + 1;
+    private static final int MENU_SYSTEM_RESTART = MENU_HELP + 1;
 
     private static final int REQUEST_CREATE_SHORTCUT = 1;
     private static final int REQUEST_CREATE_APPWIDGET = 5;
@@ -765,7 +767,7 @@ public final class Launcher extends Activity
         mOnResumeState = State.NONE;
 
         // Background was set to gradient in onPause(), restore to black if in all apps.
-        setWorkspaceBackground(mState == State.WORKSPACE);
+        //setWorkspaceBackground(mState == State.WORKSPACE);
 
         // Process any items that were added while Launcher was away
         InstallShortcutReceiver.flushInstallQueue(this);
@@ -1061,6 +1063,9 @@ public final class Launcher extends Activity
      */
     View createShortcut(int layoutResId, ViewGroup parent, ShortcutInfo info) {
         BubbleTextView favorite = (BubbleTextView) mInflater.inflate(layoutResId, parent, false);
+        if(Debug.Launcher_DEBUG){
+        	Log.v("Launcher", "createShortcut");
+        }
         favorite.applyFromShortcutInfo(info, mIconCache);
         favorite.setOnClickListener(this);
         return favorite;
@@ -1722,6 +1727,9 @@ public final class Launcher extends Activity
             .setIcon(android.R.drawable.ic_menu_preferences)
             .setIntent(settings)
             .setAlphabeticShortcut('P');
+        menu.add(0, MENU_SYSTEM_RESTART, 0, R.string.menu_restart)
+        .setIcon(android.R.drawable.ic_menu_preferences)
+        .setAlphabeticShortcut('R');
         if (!helpUrl.isEmpty()) {
             menu.add(0, MENU_HELP, 0, R.string.menu_help)
                 .setIcon(android.R.drawable.ic_menu_help)
@@ -1750,6 +1758,11 @@ public final class Launcher extends Activity
         case MENU_WALLPAPER_SETTINGS:
             startWallpaper();
             return true;
+        case MENU_SYSTEM_RESTART:
+        	NotificationManager nManager = (NotificationManager) this.getSystemService(Service.NOTIFICATION_SERVICE);
+			nManager.cancelAll();
+			android.os.Process.killProcess(android.os.Process.myPid());
+            return true;    
         }
 
         return super.onOptionsItemSelected(item);
@@ -2484,7 +2497,7 @@ public final class Launcher extends Activity
     }
 
     private void setWorkspaceBackground(boolean workspace) {
-        mLauncherView.setBackground(workspace ?
+    	mLauncherView.setBackground(workspace ?
                 mWorkspaceBackgroundDrawable : null);
     }
 
@@ -2732,7 +2745,6 @@ public final class Launcher extends Activity
             dispatchOnLauncherTransitionPrepare(toView, animated, false);
             dispatchOnLauncherTransitionStart(toView, animated, false);
             dispatchOnLauncherTransitionEnd(toView, animated, false);
-            updateWallpaperVisibility(true);
         }
     }
 
@@ -2852,22 +2864,28 @@ public final class Launcher extends Activity
             updateWallpaperVisibility(true);
         } else {
             // When launcher has focus again, disable the wallpaper if we are in AllApps
-            mWorkspace.postDelayed(new Runnable() {
+           /* mWorkspace.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     disableWallpaperIfInAllApps();
                 }
-            }, 500);
+            }, 500);*/
         }
     }
 
     void showWorkspace(boolean animated) {
+    	if(Debug.Launcher_DEBUG){
+    		Log.v(TAG, "showWorkspace"+animated);
+    	}
         showWorkspace(animated, null);
     }
 
     void showWorkspace(boolean animated, Runnable onCompleteRunnable) {
         if (mState != State.WORKSPACE) {
             boolean wasInSpringLoadedMode = (mState == State.APPS_CUSTOMIZE_SPRING_LOADED);
+            if(Debug.Launcher_DEBUG){
+        		Log.v(TAG, "wasInSpringLoadedMode"+wasInSpringLoadedMode);
+        	}
             mWorkspace.setVisibility(View.VISIBLE);
             hideAppsCustomizeHelper(State.WORKSPACE, animated, false, onCompleteRunnable);
 

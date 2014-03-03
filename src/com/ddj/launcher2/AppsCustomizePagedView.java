@@ -53,6 +53,7 @@ import android.widget.Toast;
 
 import com.ddj.launcher.R;
 import com.ddj.launcher2.DropTarget.DragObject;
+import com.ddj.launcher2.debug.Debug;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -865,6 +866,11 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
         }
         mDeferredPrepareLoadWidgetPreviewsTasks.clear();
         mForceDrawAllChildrenNextFrame = !toWorkspace;
+    }
+    
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom){
+    	super.onLayout(changed, left, top, right, bottom);
     }
 
     @Override

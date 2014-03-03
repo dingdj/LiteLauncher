@@ -220,7 +220,7 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
 
             mLauncher.getWorkspace().onDragStartedWithItem(v);
             mLauncher.getWorkspace().beginDragShared(v, this);
-            mIconDrawable = ((TextView) v).getCompoundDrawables()[1];
+            mIconDrawable = ((BubbleTextView) v).getIcon();
 
             mCurrentDragInfo = item;
             mEmptyCell[0] = item.cellX;
@@ -519,15 +519,14 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
     }
 
     protected boolean createAndAddShortcut(ShortcutInfo item) {
-        final TextView textView =
-            (TextView) mInflater.inflate(R.layout.application, this, false);
-        textView.setCompoundDrawablesWithIntrinsicBounds(null,
-                new FastBitmapDrawable(item.getIcon(mIconCache)), null, null);
-        textView.setText(item.title);
-        textView.setTag(item);
+        final BubbleTextView bubbleTextView =
+            (BubbleTextView) mInflater.inflate(R.layout.application, this, false);
+        bubbleTextView.setIconBitmap(item.getIcon(mIconCache));
+        bubbleTextView.setText(item.title);
+        bubbleTextView.setTag(item);
 
-        textView.setOnClickListener(this);
-        textView.setOnLongClickListener(this);
+        bubbleTextView.setOnClickListener(this);
+        bubbleTextView.setOnLongClickListener(this);
 
         // We need to check here to verify that the given item's location isn't already occupied
         // by another item.
@@ -543,8 +542,8 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
         CellLayout.LayoutParams lp =
             new CellLayout.LayoutParams(item.cellX, item.cellY, item.spanX, item.spanY);
         boolean insert = false;
-        textView.setOnKeyListener(new FolderKeyEventListener());
-        mContent.addViewToCellLayout(textView, insert ? 0 : -1, (int)item.id, lp, true);
+        bubbleTextView.setOnKeyListener(new FolderKeyEventListener());
+        mContent.addViewToCellLayout(bubbleTextView, insert ? 0 : -1, (int)item.id, lp, true);
         return true;
     }
 

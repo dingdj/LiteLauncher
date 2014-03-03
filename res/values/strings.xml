@@ -274,5 +274,8 @@ s -->
     <string name="custom_workspace_cling_title_2"></string>
     <!-- Dummy string [CHAR_LIMIT=60] -->
     <string name="custom_workspace_cling_description_2"></string>
+    
+    <!-- 文件夹  -->
+    <string name="default_folder_name">新建文件夹</string>
 
 </resources>

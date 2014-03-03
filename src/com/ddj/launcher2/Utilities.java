@@ -226,21 +226,21 @@ final class Utilities {
             final Bitmap bitmap = Bitmap.createBitmap(textureWidth, textureHeight,
                     Bitmap.Config.ARGB_8888);
             final Canvas canvas = sCanvas;
-            float scaleRadio = getScaleRadio((BitmapDrawable)icon, sourceWidth, sourceHeight, sIconTextureWidth, textureHeight);
-            icon.setBounds(0, 0, sourceWidth, sourceHeight);
+           /* float scaleRadio = getScaleRadio((BitmapDrawable)icon, sourceWidth, sourceHeight, sIconTextureWidth, textureHeight);
+            icon.setBounds(0, 0, sourceWidth, sourceHeight); */
             canvas.setBitmap(bitmap);
-            canvas.save();
+           /* canvas.save();
             canvas.translate((sIconTextureWidth - sourceWidth*scaleRadio) / 2.0F, (sIconTextureHeight - sourceHeight*scaleRadio) / 2.0F);
             canvas.scale(scaleRadio, scaleRadio);
             icon.draw(canvas);
             canvas.restore();
-            canvas.setBitmap(null);
+            canvas.setBitmap(null);*/
 
-            /*final int left = (textureWidth-width) / 2;
+            final int left = (textureWidth-width) / 2;
             final int top = (textureHeight-height) / 2;
 
             @SuppressWarnings("all") // suppress dead code warning
-            final boolean debug = true;
+            final boolean debug = false;
             if (debug) {
                 // draw a big box for the icon for debugging
                 canvas.drawColor(sColors[sColorIndex]);
@@ -254,7 +254,7 @@ final class Utilities {
             icon.setBounds(left, top, left+width, top+height);
             icon.draw(canvas);
             icon.setBounds(sOldBounds);
-            canvas.setBitmap(null);*/
+            canvas.setBitmap(null);
 
             return bitmap;
         }
@@ -331,10 +331,8 @@ final class Utilities {
     private static void initStatics(Context context) {
         final Resources resources = context.getResources();
         final DisplayMetrics metrics = resources.getDisplayMetrics();
-        final float density = metrics.density;
-
-        
-        sIconWidth = sIconHeight = 48;//getIconSize(metrics.densityDpi);
+        final float density = metrics.density;      
+        sIconWidth = sIconHeight = (int) resources.getDimension(R.dimen.app_icon_size);
         sIconTextureWidth = sIconTextureHeight = sIconWidth;
 
         sBlurPaint.setMaskFilter(new BlurMaskFilter(5 * density, BlurMaskFilter.Blur.NORMAL));
@@ -489,15 +487,17 @@ final class Utilities {
     }
     
     /**
-     * 构建一个异常 打出堆栈
-     * @author dingdj
-     * Date:2013-12-26下午5:34:59
-     */
-    public static void printStackForDebug(){
-    	try{
-    		throw new IllegalArgumentException("fake Exception");
-    	}catch(Exception e){
-    		e.printStackTrace();
-    	}
-    }
+	 * 将drawable转换为bitmap
+	 * @param drawable
+	 * @return Bitmap
+	 */
+	public static Bitmap drawable2Bitmap(Drawable drawable) {
+		if (null == drawable)
+			return null;
+		Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+		Canvas canvas = new Canvas(bitmap);
+		drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+		drawable.draw(canvas);
+		return bitmap;
+	}
 }

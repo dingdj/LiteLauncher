@@ -50,6 +50,8 @@ import android.view.animation.LayoutAnimationController;
 
 import com.ddj.launcher.R;
 import com.ddj.launcher2.FolderIcon.FolderRingAnimator;
+import com.ddj.launcher2.util.BubbleViewHelper;
+import com.ddj.launcher2.util.CellLayoutHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -459,7 +461,7 @@ public class CellLayout extends ViewGroup {
 
         // We draw the pressed or focused BubbleTextView's background in CellLayout because it
         // requires an expanded clip rect (due to the glow's blur radius)
-        if (mPressedOrFocusedIcon != null) {
+        /*if (mPressedOrFocusedIcon != null) {
             final int padding = mPressedOrFocusedIcon.getPressedOrFocusedBackgroundPadding();
             final Bitmap b = mPressedOrFocusedIcon.getPressedOrFocusedBackground();
             if (b != null) {
@@ -468,7 +470,7 @@ public class CellLayout extends ViewGroup {
                         mPressedOrFocusedIcon.getTop() + getPaddingTop() - padding,
                         null);
             }
-        }
+        }*/
 
         if (DEBUG_VISUALIZE_OCCUPIED) {
             int[] pt = new int[2];
@@ -498,9 +500,17 @@ public class CellLayout extends ViewGroup {
             int width = (int) fra.getOuterRingSize();
             int height = width;
             cellToPoint(fra.mCellX, fra.mCellY, mTempLocation);
-
+            
             int centerX = mTempLocation[0] + mCellWidth / 2;
-            int centerY = mTempLocation[1] + previewOffset / 2;
+            int centerY = mTempLocation[1];
+            
+            View child = this.getChildAt(fra.mCellX, fra.mCellY);
+            if(child instanceof BubbleTextView){
+            	centerY = centerY + ((BubbleTextView)child).getIconTop() + ((BubbleTextView)child).getIconSize()/2;
+            }else if(child instanceof FolderIcon){
+            	FolderIcon view = (FolderIcon)child;
+            	centerY = centerY + view.marginTop + BubbleViewHelper.getInstance(mContext).getIconSize()/2;
+            }
 
             canvas.save();
             canvas.translate(centerX - width / 2, centerY - height / 2);
@@ -515,7 +525,14 @@ public class CellLayout extends ViewGroup {
             cellToPoint(fra.mCellX, fra.mCellY, mTempLocation);
 
             centerX = mTempLocation[0] + mCellWidth / 2;
-            centerY = mTempLocation[1] + previewOffset / 2;
+            centerY = mTempLocation[1];
+            
+            if(child instanceof BubbleTextView){
+            	centerY = centerY + ((BubbleTextView)child).getIconTop() + ((BubbleTextView)child).getIconSize()/2;
+            }else if(child instanceof FolderIcon){
+            	FolderIcon view = (FolderIcon)child;
+            	centerY = centerY + view.marginTop + BubbleViewHelper.getInstance(mContext).getIconSize()/2;
+            }
             canvas.save();
             canvas.translate(centerX - width / 2, centerY - width / 2);
             d.setBounds(0, 0, width, height);
@@ -622,9 +639,9 @@ public class CellLayout extends ViewGroup {
 
             Resources res = getResources();
             if (mIsHotseat) {
-                bubbleChild.setTextColor(res.getColor(android.R.color.transparent));
+                bubbleChild.setShowText(false);
             } else {
-                bubbleChild.setTextColor(res.getColor(R.color.workspace_icon_text_color));
+            	bubbleChild.setShowText(true);
             }
         }
 

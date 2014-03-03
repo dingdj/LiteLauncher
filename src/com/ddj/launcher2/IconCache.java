@@ -57,7 +57,6 @@ public class IconCache {
     public IconCache(LauncherApplication context) {
         ActivityManager activityManager =
                 (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-
         mContext = context;
         mPackageManager = context.getPackageManager();
         mIconDpi = activityManager.getLauncherLargeIconDensity();
@@ -74,8 +73,7 @@ public class IconCache {
     public Drawable getFullResIcon(Resources resources, int iconId) {
         Drawable d;
         try {
-            //d = resources.getDrawableForDensity(iconId, mIconDpi);
-            d = resources.getDrawable(iconId);
+            d = resources.getDrawableForDensity(iconId, mIconDpi);
         } catch (Resources.NotFoundException e) {
             d = null;
         }
@@ -100,18 +98,18 @@ public class IconCache {
     }
 
     public Drawable getFullResIcon(ResolveInfo info) {
-        Drawable d =  getFullResIcon(info.activityInfo);
-        if(!(d instanceof BitmapDrawable)){
-        	Log.v(TAG, info.resolvePackageName);
-        }else{
-        	Log.v(TAG, "is BitmapDrawable"+info.resolvePackageName);
-        }
-        return d;
+        return getFullResIcon(info.activityInfo);
     }
 
     public Drawable getFullResIcon(ActivityInfo info) {
-    	//return info.loadIcon(mPackageManager);
-        Resources resources;
+    	/**
+    	 * 获取小米系统优化好的图标
+    	 */
+    	return info.loadIcon(mPackageManager);
+    	/**
+    	 * 获取原生图标
+    	 */
+        /*Resources resources;
         try {
             resources = mPackageManager.getResourcesForApplication(
                     info.applicationInfo);
@@ -124,7 +122,7 @@ public class IconCache {
                 return getFullResIcon(resources, iconId);
             }
         }
-        return getFullResDefaultActivityIcon();
+        return getFullResDefaultActivityIcon();*/
     }
 
     private Bitmap makeDefaultIcon() {
@@ -220,7 +218,6 @@ public class IconCache {
             if (entry.title == null) {
                 entry.title = info.activityInfo.name;
             }
-            Log.v("IconCustomizer", entry.title);
             entry.icon = Utilities.createIconBitmap(getFullResIcon(info), mContext);
         }
         return entry;

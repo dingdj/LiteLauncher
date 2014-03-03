@@ -34,6 +34,7 @@ import android.view.ViewConfiguration;
 import android.view.inputmethod.InputMethodManager;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.debug.Debug;
 
 import java.util.ArrayList;
 
@@ -176,7 +177,7 @@ public class DragController {
      */
     public void startDrag(View v, Bitmap bmp, DragSource source, Object dragInfo, int dragAction,
             Point extraPadding, float initialDragViewScale) {
-        int[] loc = mCoordinatesTemp;
+    	int[] loc = mCoordinatesTemp;
         mLauncher.getDragLayer().getLocationInDragLayer(v, loc);
         int viewExtraPaddingLeft = extraPadding != null ? extraPadding.x : 0;
         int viewExtraPaddingTop = extraPadding != null ? extraPadding.y : 0;
@@ -636,6 +637,7 @@ public class DragController {
             if (theta <= Math.toRadians(MAX_FLING_DEGREES)) {
                 return vel;
             }
+           
         }
         return null;
     }
