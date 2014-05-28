@@ -26,12 +26,15 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.DragListener;
+import com.ddj.launcher2.core.DragSource;
+import com.ddj.launcher2.core.DropTarget;
 
 
 /**
  * Implements a DropTarget.
  */
-public class ButtonDropTarget extends TextView implements DropTarget, DragController.DragListener {
+public class ButtonDropTarget extends TextView implements DropTarget, DragListener {
 
     protected final int mTransitionDuration;
 

@@ -16,6 +16,8 @@
 
 package com.ddj.launcher2;
 
+import com.ddj.launcher2.core.FastBitmapDrawable;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;

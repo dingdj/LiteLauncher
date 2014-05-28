@@ -16,11 +16,13 @@
 
 package com.ddj.launcher2;
 
+import java.util.HashMap;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.OnHierarchyChangeListener;
 
-import java.util.HashMap;
+import com.ddj.launcher2.core.IAppsCustomizeTabHost;
 
 public class HideFromAccessibilityHelper implements OnHierarchyChangeListener {
     private HashMap<View, Integer> mPreviousValues;
@@ -101,7 +103,7 @@ public class HideFromAccessibilityHelper implements OnHierarchyChangeListener {
 
     private boolean includeView(View v) {
         return !hasAncestorOfType(v, Cling.class) &&
-                (!mOnlyAllApps || hasAncestorOfType(v, AppsCustomizeTabHost.class));
+                (!mOnlyAllApps || hasAncestorOfType(v, IAppsCustomizeTabHost.class));
     }
 
     private boolean hasAncestorOfType(View v, Class c) {

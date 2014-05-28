@@ -14,7 +14,6 @@ import android.util.Log;
 public class MemoryUse {
 	
 	private static final String TAG = "MemoryUse";
-	
 	private static MemoryUse instance;
 	
 	private long periodTime = 60*1000;//2*60*60*1000;

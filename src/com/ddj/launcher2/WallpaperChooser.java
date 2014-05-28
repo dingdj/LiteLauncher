@@ -16,12 +16,12 @@
 
 package com.ddj.launcher2;
 
-import com.ddj.launcher.R;
-
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+
+import com.ddj.launcher.R;
 
 public class WallpaperChooser extends Activity {
     @SuppressWarnings("unused")

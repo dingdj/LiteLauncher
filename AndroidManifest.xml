@@ -149,7 +149,7 @@
 
         <!-- The settings provider contains Home's data, like the workspace favorites -->
         <provider
-            android:name="com.ddj.launcher2.LauncherProvider"
+            android:name="com.ddj.launcher2.core.LauncherProvider"
             android:authorities="com.ddj.launcher2.settings"
             android:exported="true"
             android:writePermission="com.android.launcher.permission.WRITE_SETTINGS"

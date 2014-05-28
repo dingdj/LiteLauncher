@@ -25,6 +25,9 @@ import android.view.ViewPropertyAnimator;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import com.ddj.launcher2.core.FirstFrameAnimatorHelper;
+import com.ddj.launcher2.core.LauncherAnimUtils;
+
 public class LauncherViewPropertyAnimator extends Animator implements AnimatorListener {
     enum Properties {
             TRANSLATION_X,

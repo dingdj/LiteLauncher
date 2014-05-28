@@ -22,6 +22,8 @@ import android.content.Intent;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.ddj.launcher2.core.LauncherProvider;
+
 public class PreloadReceiver extends BroadcastReceiver {
     private static final String TAG = "Launcher.PreloadReceiver";
     private static final boolean LOGD = false;

@@ -28,12 +28,14 @@ import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.DragListener;
+import com.ddj.launcher2.core.DragSource;
 
 /*
  * Ths bar will manage the transition between the QSB search bar and the delete drop
  * targets so that each of the individual IconDropTargets don't have to.
  */
-public class SearchDropTargetBar extends FrameLayout implements DragController.DragListener {
+public class SearchDropTargetBar extends FrameLayout implements DragListener {
 
     private static final int sTransitionInDuration = 200;
     private static final int sTransitionOutDuration = 175;

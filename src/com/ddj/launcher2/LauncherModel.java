@@ -16,6 +16,19 @@
 
 package com.ddj.launcher2;
 
+import java.lang.ref.WeakReference;
+import java.net.URISyntaxException;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import android.app.SearchManager;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
@@ -49,19 +62,17 @@ import android.util.Log;
 
 import com.ddj.launcher.R;
 import com.ddj.launcher2.InstallWidgetReceiver.WidgetMimeTypeHandlerData;
-
-import java.lang.ref.WeakReference;
-import java.net.URISyntaxException;
-import java.text.Collator;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import com.ddj.launcher2.core.AllAppCacheDbUtil;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.FastBitmapDrawable;
+import com.ddj.launcher2.core.IAllAppData;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherState;
+import com.ddj.launcher2.core.LauncherUtil;
+import com.ddj.launcher2.core.ShortcutInfo;
+import com.ddj.launcher2.core.Utilities;
 
 /**
  * Maintains in-memory state of the Launcher. It is expected that there should be only one
@@ -111,7 +122,7 @@ public class LauncherModel extends BroadcastReceiver {
     private WeakReference<Callbacks> mCallbacks;
 
     // < only access in worker thread >
-    private AllAppsList mBgAllAppsList;
+    private IAllAppData mBgAllAppsList;
 
     // The lock that must be acquired before referencing any static bg data structures.  Unlike
     // other locks, this one can generally be held long-term because we never expect any of these
@@ -171,7 +182,7 @@ public class LauncherModel extends BroadcastReceiver {
     LauncherModel(LauncherApplication app, IconCache iconCache) {
         mAppsCanBeOnExternalStorage = !Environment.isExternalStorageEmulated();
         mApp = app;
-        mBgAllAppsList = new AllAppsList(iconCache);
+        mBgAllAppsList = LauncherState.getInstance().getAllAppList(iconCache);
         mIconCache = iconCache;
 
         mDefaultIcon = Utilities.createIconBitmap(
@@ -664,11 +675,11 @@ public class LauncherModel extends BroadcastReceiver {
                 | (screen & 0xFF) << 16 | (localCellX & 0xFF) << 8 | (localCellY & 0xFF);
     }
 
-    static int getCellCountX() {
+    public static int getCellCountX() {
         return mCellCountX;
     }
 
-    static int getCellCountY() {
+    public static int getCellCountY() {
         return mCellCountY;
     }
 
@@ -1844,7 +1855,7 @@ public class LauncherModel extends BroadcastReceiver {
             // shallow copy
             @SuppressWarnings("unchecked")
             final ArrayList<ApplicationInfo> list
-                    = (ArrayList<ApplicationInfo>) mBgAllAppsList.data.clone();
+                    = (ArrayList<ApplicationInfo>) mBgAllAppsList.getData().clone();
             Runnable r = new Runnable() {
                 public void run() {
                     final long t = SystemClock.uptimeMillis();
@@ -1936,8 +1947,8 @@ public class LauncherModel extends BroadcastReceiver {
 
                 final boolean first = i <= batchSize;
                 final Callbacks callbacks = tryGetCallbacks(oldCallbacks);
-                final ArrayList<ApplicationInfo> added = mBgAllAppsList.added;
-                mBgAllAppsList.added = new ArrayList<ApplicationInfo>();
+                final ArrayList<ApplicationInfo> added = mBgAllAppsList.getAdded();
+                mBgAllAppsList.setAdd(new ArrayList<ApplicationInfo>());
 
                 mHandler.post(new Runnable() {
                     public void run() {
@@ -2029,7 +2040,7 @@ public class LauncherModel extends BroadcastReceiver {
                         mBgAllAppsList.updatePackage(context, packages[i]);
                         LauncherApplication app =
                                 (LauncherApplication) context.getApplicationContext();
-                        WidgetPreviewLoader.removeFromDb(
+                        AllAppCacheDbUtil.removeFromDb(
                                 app.getWidgetPreviewCacheDb(), packages[i]);
                     }
                     break;
@@ -2040,7 +2051,7 @@ public class LauncherModel extends BroadcastReceiver {
                         mBgAllAppsList.removePackage(packages[i]);
                         LauncherApplication app =
                                 (LauncherApplication) context.getApplicationContext();
-                        WidgetPreviewLoader.removeFromDb(
+                        AllAppCacheDbUtil.removeFromDb(
                                 app.getWidgetPreviewCacheDb(), packages[i]);
                     }
                     break;
@@ -2050,17 +2061,17 @@ public class LauncherModel extends BroadcastReceiver {
             ArrayList<ApplicationInfo> modified = null;
             final ArrayList<ApplicationInfo> removedApps = new ArrayList<ApplicationInfo>();
 
-            if (mBgAllAppsList.added.size() > 0) {
-                added = new ArrayList<ApplicationInfo>(mBgAllAppsList.added);
-                mBgAllAppsList.added.clear();
+            if (mBgAllAppsList.getAdded().size() > 0) {
+                added = new ArrayList<ApplicationInfo>(mBgAllAppsList.getAdded());
+                mBgAllAppsList.getAdded().clear();
             }
-            if (mBgAllAppsList.modified.size() > 0) {
-                modified = new ArrayList<ApplicationInfo>(mBgAllAppsList.modified);
-                mBgAllAppsList.modified.clear();
+            if (mBgAllAppsList.getModified().size() > 0) {
+                modified = new ArrayList<ApplicationInfo>(mBgAllAppsList.getModified());
+                mBgAllAppsList.getModified().clear();
             }
-            if (mBgAllAppsList.removed.size() > 0) {
-                removedApps.addAll(mBgAllAppsList.removed);
-                mBgAllAppsList.removed.clear();
+            if (mBgAllAppsList.getRemoved().size() > 0) {
+                removedApps.addAll(mBgAllAppsList.getRemoved());
+                mBgAllAppsList.getRemoved().clear();
             }
 
             final Callbacks callbacks = mCallbacks != null ? mCallbacks.get() : null;
@@ -2110,7 +2121,7 @@ public class LauncherModel extends BroadcastReceiver {
             }
 
             final ArrayList<Object> widgetsAndShortcuts =
-                getSortedWidgetsAndShortcuts(context);
+                LauncherUtil.getSortedWidgetsAndShortcuts(context);
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -2123,17 +2134,7 @@ public class LauncherModel extends BroadcastReceiver {
         }
     }
 
-    // Returns a list of ResolveInfos/AppWindowInfos in sorted order
-    public static ArrayList<Object> getSortedWidgetsAndShortcuts(Context context) {
-        PackageManager packageManager = context.getPackageManager();
-        final ArrayList<Object> widgetsAndShortcuts = new ArrayList<Object>();
-        widgetsAndShortcuts.addAll(AppWidgetManager.getInstance(context).getInstalledProviders());
-        Intent shortcutsIntent = new Intent(Intent.ACTION_CREATE_SHORTCUT);
-        widgetsAndShortcuts.addAll(packageManager.queryIntentActivities(shortcutsIntent, 0));
-        Collections.sort(widgetsAndShortcuts,
-            new LauncherModel.WidgetAndShortcutNameComparator(packageManager));
-        return widgetsAndShortcuts;
-    }
+    
 
     /**
      * This is called from the code that adds shortcuts from the intent receiver.  This
@@ -2508,18 +2509,7 @@ public class LauncherModel extends BroadcastReceiver {
         return folderInfo;
     }
 
-    public static final Comparator<ApplicationInfo> getAppNameComparator() {
-        final Collator collator = Collator.getInstance();
-        return new Comparator<ApplicationInfo>() {
-            public final int compare(ApplicationInfo a, ApplicationInfo b) {
-                int result = collator.compare(a.title.toString(), b.title.toString());
-                if (result == 0) {
-                    result = a.componentName.compareTo(b.componentName);
-                }
-                return result;
-            }
-        };
-    }
+
     public static final Comparator<ApplicationInfo> APP_INSTALL_TIME_COMPARATOR
             = new Comparator<ApplicationInfo>() {
         public final int compare(ApplicationInfo a, ApplicationInfo b) {
@@ -2578,43 +2568,13 @@ public class LauncherModel extends BroadcastReceiver {
             return mCollator.compare(labelA, labelB);
         }
     };
-    public static class WidgetAndShortcutNameComparator implements Comparator<Object> {
-        private Collator mCollator;
-        private PackageManager mPackageManager;
-        private HashMap<Object, String> mLabelCache;
-        WidgetAndShortcutNameComparator(PackageManager pm) {
-            mPackageManager = pm;
-            mLabelCache = new HashMap<Object, String>();
-            mCollator = Collator.getInstance();
-        }
-        public final int compare(Object a, Object b) {
-            String labelA, labelB;
-            if (mLabelCache.containsKey(a)) {
-                labelA = mLabelCache.get(a);
-            } else {
-                labelA = (a instanceof AppWidgetProviderInfo) ?
-                    ((AppWidgetProviderInfo) a).label :
-                    ((ResolveInfo) a).loadLabel(mPackageManager).toString();
-                mLabelCache.put(a, labelA);
-            }
-            if (mLabelCache.containsKey(b)) {
-                labelB = mLabelCache.get(b);
-            } else {
-                labelB = (b instanceof AppWidgetProviderInfo) ?
-                    ((AppWidgetProviderInfo) b).label :
-                    ((ResolveInfo) b).loadLabel(mPackageManager).toString();
-                mLabelCache.put(b, labelB);
-            }
-            return mCollator.compare(labelA, labelB);
-        }
-    };
 
     public void dumpState() {
         Log.d(TAG, "mCallbacks=" + mCallbacks);
-        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.data", mBgAllAppsList.data);
-        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.added", mBgAllAppsList.added);
-        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.removed", mBgAllAppsList.removed);
-        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.modified", mBgAllAppsList.modified);
+        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.data", mBgAllAppsList.getData());
+        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.added", mBgAllAppsList.getAdded());
+        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.removed", mBgAllAppsList.getRemoved());
+        ApplicationInfo.dumpApplicationInfoList(TAG, "mAllAppsList.modified", mBgAllAppsList.getModified());
         if (mLoaderTask != null) {
             mLoaderTask.dumpState();
         } else {

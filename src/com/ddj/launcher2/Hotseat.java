@@ -27,6 +27,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
 
 public class Hotseat extends FrameLayout {
     @SuppressWarnings("unused")
@@ -141,7 +142,7 @@ public class Hotseat extends FrameLayout {
         // the hotseat in order regardless of which orientation they were added
         int x = getCellXFromOrder(mAllAppsButtonRank);
         int y = getCellYFromOrder(mAllAppsButtonRank);
-        CellLayout.LayoutParams lp = new CellLayout.LayoutParams(x,y,1,1);
+        CellLayoutLayoutParams lp = new CellLayoutLayoutParams(x,y,1,1);
         lp.canReorder = false;
         mContent.addViewToCellLayout(allAppsButton, -1, 0, lp, true);
     }

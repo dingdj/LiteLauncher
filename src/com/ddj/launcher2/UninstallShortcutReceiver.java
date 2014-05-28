@@ -16,6 +16,12 @@
 
 package com.ddj.launcher2;
 
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -26,12 +32,8 @@ import android.net.Uri;
 import android.widget.Toast;
 
 import com.ddj.launcher.R;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherUtil;
 
 public class UninstallShortcutReceiver extends BroadcastReceiver {
     private static final String ACTION_UNINSTALL_SHORTCUT =
@@ -81,7 +83,7 @@ public class UninstallShortcutReceiver extends BroadcastReceiver {
 
     private static void processUninstallShortcut(Context context,
             PendingUninstallShortcutInfo pendingInfo) {
-        String spKey = LauncherApplication.getSharedPreferencesKey();
+        String spKey = LauncherUtil.getSharedPreferencesKey();
         SharedPreferences sharedPrefs = context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
 
         final Intent data = pendingInfo.data;

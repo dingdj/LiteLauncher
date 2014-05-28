@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<array name="item_shake_animation_scaler">
+        <item>0.0dip</item>
+        <item>-4.0dip</item>
+        <item>2.0dip</item>
+        <item>-1.0dip</item>
+        <item>0.0dip</item>
+    </array>
+</resources>    

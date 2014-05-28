@@ -21,6 +21,8 @@ import android.util.AttributeSet;
 import android.view.animation.Interpolator;
 import android.widget.Scroller;
 
+import com.ddj.launcher2.core.PagedView;
+
 public abstract class SmoothPagedView extends PagedView {
     private static final float SMOOTHING_SPEED = 0.75f;
     private static final float SMOOTHING_CONSTANT = (float) (0.016 / Math.log(SMOOTHING_SPEED));
@@ -155,7 +157,7 @@ public abstract class SmoothPagedView extends PagedView {
     }
 
     @Override
-    protected void snapToPage(int whichPage) {
+	public void snapToPage(int whichPage) {
        if (mScrollMode == X_LARGE_MODE) {
            super.snapToPage(whichPage);
        } else {

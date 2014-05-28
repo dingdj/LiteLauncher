@@ -34,6 +34,8 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.PendingAddWidgetInfo;
 
 
 /**

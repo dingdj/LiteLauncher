@@ -16,6 +16,8 @@
 
 package com.ddj.launcher2;
 
+import java.lang.ref.WeakReference;
+
 import android.app.Application;
 import android.app.SearchManager;
 import android.content.ContentResolver;
@@ -26,23 +28,26 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.CacheDb;
+import com.ddj.launcher2.core.ILauncherApplication;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.LauncherProvider;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherState;
 import com.ddj.launcher2.util.Global;
 
-import java.lang.ref.WeakReference;
-
-public class LauncherApplication extends Application {
+public class LauncherApplication extends Application implements ILauncherApplication {
     private LauncherModel mModel;
     private IconCache mIconCache;
-    private WidgetPreviewLoader.CacheDb mWidgetPreviewCacheDb;
+    private CacheDb mWidgetPreviewCacheDb;
     private static boolean sIsScreenLarge;
     private static float sScreenDensity;
     private static int sLongPressTimeout = 300;
-    private static final String sSharedPreferencesKey = "com.android.launcher2.prefs";
+    
     WeakReference<LauncherProvider> mLauncherProvider;
 
     @Override
@@ -52,8 +57,9 @@ public class LauncherApplication extends Application {
         sIsScreenLarge = getResources().getBoolean(R.bool.is_large_screen);
         sScreenDensity = getResources().getDisplayMetrics().density;
         
-        mWidgetPreviewCacheDb = new WidgetPreviewLoader.CacheDb(this);
+        mWidgetPreviewCacheDb = new CacheDb(this);
         mIconCache = new IconCache(this);
+        LauncherState.getInstance().setIconCache(mIconCache);
         mModel = new LauncherModel(this, mIconCache);
 
         // Register intent receivers
@@ -80,6 +86,8 @@ public class LauncherApplication extends Application {
         resolver.registerContentObserver(LauncherSettings.Favorites.CONTENT_URI, true,
                 mFavoritesObserver);
         Global.setContext(this.getBaseContext());
+        LauncherState.getInstance().setApplicationContext(this.getBaseContext());
+        
     }
 
     /**
@@ -113,7 +121,7 @@ public class LauncherApplication extends Application {
         return mModel;
     }
 
-    IconCache getIconCache() {
+   public IconCache getIconCache() {
         return mIconCache;
     }
 
@@ -121,11 +129,11 @@ public class LauncherApplication extends Application {
         return mModel;
     }
 
-    WidgetPreviewLoader.CacheDb getWidgetPreviewCacheDb() {
+   public CacheDb getWidgetPreviewCacheDb() {
         return mWidgetPreviewCacheDb;
     }
 
-   void setLauncherProvider(LauncherProvider provider) {
+   public void setLauncherProvider(LauncherProvider provider) {
         mLauncherProvider = new WeakReference<LauncherProvider>(provider);
     }
 
@@ -133,9 +141,6 @@ public class LauncherApplication extends Application {
         return mLauncherProvider.get();
     }
 
-    public static String getSharedPreferencesKey() {
-        return sSharedPreferencesKey;
-    }
 
     public static boolean isScreenLarge() {
         return sIsScreenLarge;

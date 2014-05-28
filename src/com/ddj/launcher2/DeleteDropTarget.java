@@ -35,8 +35,18 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.IAppsCustomizePagedView;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.DragSource;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.IDeleteDropTarget;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherAppWidgetHost;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.PendingAddItemInfo;
+import com.ddj.launcher2.core.ShortcutInfo;
 
-public class DeleteDropTarget extends ButtonDropTarget {
+public class DeleteDropTarget extends ButtonDropTarget implements IDeleteDropTarget{
     private static int DELETE_ANIMATION_DURATION = 285;
     private static int FLING_DELETE_ANIMATION_DURATION = 350;
     private static float FLING_TO_DELETE_FRICTION = 0.035f;
@@ -89,10 +99,10 @@ public class DeleteDropTarget extends ButtonDropTarget {
     }
 
     private boolean isAllAppsApplication(DragSource source, Object info) {
-        return (source instanceof AppsCustomizePagedView) && (info instanceof ApplicationInfo);
+        return (source instanceof IAppsCustomizePagedView) && (info instanceof ApplicationInfo);
     }
     private boolean isAllAppsWidget(DragSource source, Object info) {
-        if (source instanceof AppsCustomizePagedView) {
+        if (source instanceof IAppsCustomizePagedView) {
             if (info instanceof PendingAddItemInfo) {
                 PendingAddItemInfo addInfo = (PendingAddItemInfo) info;
                 switch (addInfo.itemType) {
@@ -368,7 +378,7 @@ public class DeleteDropTarget extends ButtonDropTarget {
     }
 
     public void onFlingToDelete(final DragObject d, int x, int y, PointF vel) {
-        final boolean isAllApps = d.dragSource instanceof AppsCustomizePagedView;
+        final boolean isAllApps = d.dragSource instanceof IAppsCustomizePagedView;
 
         // Don't highlight the icon as it's animating
         d.dragView.setColor(0);

@@ -16,19 +16,20 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
 import android.content.res.Configuration;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.TabHost;
-import android.widget.TabWidget;
 
 import com.ddj.launcher.R;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+//import com.ddj.launcher2.allapps.PagedViewCellLayout;
 
 /**
  * A keyboard listener we set on all the workspace icons.
@@ -118,19 +119,19 @@ public class FocusHelper {
     /**
      * Returns the Viewgroup containing page contents for the page at the index specified.
      */
-    private static ViewGroup getAppsCustomizePage(ViewGroup container, int index) {
+   /* private static ViewGroup getAppsCustomizePage(ViewGroup container, int index) {
         ViewGroup page = (ViewGroup) ((PagedView) container).getPageAt(index);
         if (page instanceof PagedViewCellLayout) {
             // There are two layers, a PagedViewCellLayout and PagedViewCellLayoutChildren
             page = (ViewGroup) page.getChildAt(0);
         }
         return page;
-    }
+    }*/
 
     /**
      * Handles key events in a PageViewExtendedLayout containing PagedViewWidgets.
      */
-    static boolean handlePagedViewGridLayoutWidgetKeyEvent(PagedViewWidget w, int keyCode,
+   /* static boolean handlePagedViewGridLayoutWidgetKeyEvent(PagedViewWidget w, int keyCode,
             KeyEvent e) {
 
         final PagedViewGridLayout parent = (PagedViewGridLayout) w.getParent();
@@ -272,11 +273,11 @@ public class FocusHelper {
         }
         return wasHandled;
     }
-
+*/
     /**
      * Handles key events in a PageViewCellLayout containing PagedViewIcons.
      */
-    static boolean handleAppsCustomizeKeyEvent(View v, int keyCode, KeyEvent e) {
+    /*static boolean handleAppsCustomizeKeyEvent(View v, int keyCode, KeyEvent e) {
         ViewGroup parentLayout;
         ViewGroup itemContainer;
         int countX;
@@ -431,7 +432,7 @@ public class FocusHelper {
             default: break;
         }
         return wasHandled;
-    }
+    }*/
 
     /**
      * Handles key events in the tab widget.
@@ -576,8 +577,8 @@ public class FocusHelper {
         Collections.sort(views, new Comparator<View>() {
             @Override
             public int compare(View lhs, View rhs) {
-                CellLayout.LayoutParams llp = (CellLayout.LayoutParams) lhs.getLayoutParams();
-                CellLayout.LayoutParams rlp = (CellLayout.LayoutParams) rhs.getLayoutParams();
+                CellLayoutLayoutParams llp = (CellLayoutLayoutParams) lhs.getLayoutParams();
+                CellLayoutLayoutParams rlp = (CellLayoutLayoutParams) rhs.getLayoutParams();
                 int lvIndex = (llp.cellY * cellCountX) + llp.cellX;
                 int rvIndex = (rlp.cellY * cellCountX) + rlp.cellX;
                 return lvIndex - rvIndex;
@@ -623,7 +624,7 @@ public class FocusHelper {
     private static View getClosestIconOnLine(CellLayout layout, ViewGroup parent, View v,
             int lineDelta) {
         final ArrayList<View> views = getCellLayoutChildrenSortedSpatially(layout, parent);
-        final CellLayout.LayoutParams lp = (CellLayout.LayoutParams) v.getLayoutParams();
+        final CellLayoutLayoutParams lp = (CellLayoutLayoutParams) v.getLayoutParams();
         final int cellCountY = layout.getCountY();
         final int row = lp.cellY;
         final int newRow = row + lineDelta;
@@ -634,7 +635,7 @@ public class FocusHelper {
             int endIndex = (lineDelta < 0) ? -1 : views.size();
             while (index != endIndex) {
                 View newV = views.get(index);
-                CellLayout.LayoutParams tmpLp = (CellLayout.LayoutParams) newV.getLayoutParams();
+                CellLayoutLayoutParams tmpLp = (CellLayoutLayoutParams) newV.getLayoutParams();
                 boolean satisfiesRow = (lineDelta < 0) ? (tmpLp.cellY < row) : (tmpLp.cellY > row);
                 if (satisfiesRow &&
                         (newV instanceof BubbleTextView || newV instanceof FolderIcon)) {

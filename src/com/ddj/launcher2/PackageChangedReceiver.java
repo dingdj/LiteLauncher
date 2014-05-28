@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.ddj.launcher2.core.AllAppCacheDbUtil;
+
 public class PackageChangedReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
@@ -14,6 +16,6 @@ public class PackageChangedReceiver extends BroadcastReceiver {
             return;
         }
         LauncherApplication app = (LauncherApplication) context.getApplicationContext();
-        WidgetPreviewLoader.removeFromDb(app.getWidgetPreviewCacheDb(), packageName);
+        AllAppCacheDbUtil.removeFromDb(app.getWidgetPreviewCacheDb(), packageName);
     }
 }

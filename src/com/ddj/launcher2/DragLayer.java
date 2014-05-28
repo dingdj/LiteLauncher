@@ -16,6 +16,8 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.TimeInterpolator;
@@ -34,20 +36,23 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.ddj.launcher.R;
-
-import java.util.ArrayList;
+import com.ddj.launcher2.core.AppWidgetResizeFrame;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.IDragLayer;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherAppWidgetHostView;
 
 /**
  * A ViewGroup that coordinates dragging across its descendants
  */
-public class DragLayer extends FrameLayout implements ViewGroup.OnHierarchyChangeListener {
+public class DragLayer extends IDragLayer implements ViewGroup.OnHierarchyChangeListener {
     private DragController mDragController;
     private int[] mTmpXY = new int[2];
 
@@ -475,7 +480,7 @@ public class DragLayer extends FrameLayout implements ViewGroup.OnHierarchyChang
     public void animateViewIntoPosition(DragView dragView, final View child, int duration,
             final Runnable onFinishAnimationRunnable, View anchorView) {
         ShortcutAndWidgetContainer parentChildren = (ShortcutAndWidgetContainer) child.getParent();
-        CellLayout.LayoutParams lp =  (CellLayout.LayoutParams) child.getLayoutParams();
+        CellLayoutLayoutParams lp =  (CellLayoutLayoutParams) child.getLayoutParams();
         parentChildren.measureChild(child);
 
         Rect r = new Rect();

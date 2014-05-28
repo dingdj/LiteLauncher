@@ -41,7 +41,6 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityOptions;
 import android.app.NotificationManager;
@@ -111,7 +110,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ddj.launcher.R;
-import com.ddj.launcher2.DropTarget.DragObject;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.CellLayoutConfig;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.DropTarget;
+import com.ddj.launcher2.core.DropTarget.DragObject;
+import com.ddj.launcher2.core.FirstFrameAnimatorHelper;
+import com.ddj.launcher2.core.IAppsCustomizePagedView;
+import com.ddj.launcher2.core.IAppsCustomizeTabHost;
+import com.ddj.launcher2.core.ILauncher;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherAnimUtils;
+import com.ddj.launcher2.core.LauncherAppWidgetHost;
+import com.ddj.launcher2.core.LauncherProvider;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherState;
+import com.ddj.launcher2.core.LauncherTransitionable;
+import com.ddj.launcher2.core.LauncherUtil;
+import com.ddj.launcher2.core.PendingAddWidgetInfo;
+import com.ddj.launcher2.core.ShortcutInfo;
+import com.ddj.launcher2.core.UIComponentManager;
 import com.ddj.launcher2.debug.Debug;
 import com.ddj.launcher2.debug.MemoryUse;
 //import com.android.common.Search;
@@ -119,7 +139,7 @@ import com.ddj.launcher2.debug.MemoryUse;
 /**
  * Default launcher application.
  */
-public final class Launcher extends Activity
+public final class Launcher extends ILauncher
         implements View.OnClickListener, OnLongClickListener, LauncherModel.Callbacks,
                    View.OnTouchListener {
     static final String TAG = "Launcher";
@@ -198,7 +218,7 @@ public final class Launcher extends Activity
     private AnimatorSet mStateAnimation;
     private AnimatorSet mDividerAnimator;
 
-    static final int APPWIDGET_HOST_ID = 1024;
+    
     private static final int EXIT_SPRINGLOADED_MODE_SHORT_TIMEOUT = 300;
     private static final int EXIT_SPRINGLOADED_MODE_LONG_TIMEOUT = 600;
     private static final int SHOW_CLING_DURATION = 550;
@@ -238,8 +258,8 @@ public final class Launcher extends Activity
     private View mAllAppsButton;
 
     private SearchDropTargetBar mSearchDropTargetBar;
-    private AppsCustomizeTabHost mAppsCustomizeTabHost;
-    private AppsCustomizePagedView mAppsCustomizeContent;
+    private IAppsCustomizeTabHost mAppsCustomizeTabHost;
+    private IAppsCustomizePagedView mAppsCustomizeContent;
     private boolean mAutoAdvanceRunning = false;
 
     private Bundle mSavedState;
@@ -363,15 +383,17 @@ public final class Launcher extends Activity
 
         super.onCreate(savedInstanceState);
         LauncherApplication app = ((LauncherApplication)getApplication());
-        mSharedPrefs = getSharedPreferences(LauncherApplication.getSharedPreferencesKey(),
+        LauncherState.getInstance().setLauncher(this);
+        mSharedPrefs = getSharedPreferences(LauncherUtil.getSharedPreferencesKey(),
                 Context.MODE_PRIVATE);
         mModel = app.setLauncher(this);
         mIconCache = app.getIconCache();
         mDragController = new DragController(this);
+        UIComponentManager.getInstance().setDragController(mDragController);
         mInflater = getLayoutInflater();
 
         mAppWidgetManager = AppWidgetManager.getInstance(this);
-        mAppWidgetHost = new LauncherAppWidgetHost(this, APPWIDGET_HOST_ID);
+        mAppWidgetHost = new LauncherAppWidgetHost(this, LauncherUtil.APPWIDGET_HOST_ID);
         mAppWidgetHost.startListening();
 
         // If we are getting an onCreate, we can actually preempt onResume and unset mPaused here,
@@ -399,7 +421,7 @@ public final class Launcher extends Activity
         // Update customization drawer _after_ restoring the states
         if (mAppsCustomizeContent != null) {
             mAppsCustomizeContent.onPackagesUpdated(
-                LauncherModel.getSortedWidgetsAndShortcuts(this));
+                LauncherUtil.getSortedWidgetsAndShortcuts(this));
         }
 
         if (PROFILE_STARTUP) {
@@ -410,7 +432,7 @@ public final class Launcher extends Activity
             if (sPausedFromUserAction) {
                 // If the user leaves launcher, then we should just load items asynchronously when
                 // they return.
-                mModel.startLoader(true, -1);
+                mModel.startLoader(true, 1);
             } else {
                 // We only load the page synchronously if the user rotates (or triggers a
                 // configuration change) while launcher is in the foreground
@@ -419,7 +441,7 @@ public final class Launcher extends Activity
         }
 
         if (!mModel.isAllAppsLoaded()) {
-            ViewGroup appsCustomizeContentParent = (ViewGroup) mAppsCustomizeContent.getParent();
+            ViewGroup appsCustomizeContentParent = (ViewGroup) mAppsCustomizeContent._getParent();
             mInflater.inflate(R.layout.apps_customize_progressbar, appsCustomizeContentParent);
         }
 
@@ -575,7 +597,7 @@ public final class Launcher extends Activity
         return mDragLayer;
     }
 
-    boolean isDraggingEnabled() {
+    public boolean isDraggingEnabled() {
         // We prevent dragging when we are loading the workspace as it is possible to pick up a view
         // that is subsequently removed from the workspace in startBinding().
         return !mModel.isLoadingWorkspace();
@@ -982,8 +1004,8 @@ public final class Launcher extends Activity
             if (curTab != null) {
                 mAppsCustomizeTabHost.setContentTypeImmediate(
                         mAppsCustomizeTabHost.getContentTypeForTabTag(curTab));
-                mAppsCustomizeContent.loadAssociatedPages(
-                        mAppsCustomizeContent.getCurrentPage());
+                mAppsCustomizeContent._loadAssociatedPages(
+                        mAppsCustomizeContent._getCurrentPage());
             }
 
             int currentIndex = savedState.getInt("apps_customize_currentIndex");
@@ -999,7 +1021,11 @@ public final class Launcher extends Activity
 
         mLauncherView = findViewById(R.id.launcher);
         mDragLayer = (DragLayer) findViewById(R.id.drag_layer);
+        UIComponentManager.getInstance().setDragLayer(mDragLayer);
+        
         mWorkspace = (Workspace) mDragLayer.findViewById(R.id.workspace);
+        UIComponentManager.getInstance().setWorkspace(mWorkspace);
+        
         mQsbDivider = findViewById(R.id.qsb_divider);
         mDockDivider = findViewById(R.id.dock_divider);
 
@@ -1025,8 +1051,8 @@ public final class Launcher extends Activity
         mSearchDropTargetBar = (SearchDropTargetBar) mDragLayer.findViewById(R.id.qsb_bar);
 
         // Setup AppsCustomize
-        mAppsCustomizeTabHost = (AppsCustomizeTabHost) findViewById(R.id.apps_customize_pane);
-        mAppsCustomizeContent = (AppsCustomizePagedView)
+        mAppsCustomizeTabHost = (IAppsCustomizeTabHost) findViewById(R.id.apps_customize_pane);
+        mAppsCustomizeContent = (IAppsCustomizePagedView)
                 mAppsCustomizeTabHost.findViewById(R.id.apps_customize_pane_content);
         mAppsCustomizeContent.setup(this, dragController);
 
@@ -1168,7 +1194,7 @@ public final class Launcher extends Activity
         // to ensure that it gets the full amount of space that it has requested
         int requiredWidth = minWidth + padding.left + padding.right;
         int requiredHeight = minHeight + padding.top + padding.bottom;
-        return CellLayout.rectToCell(context.getResources(), requiredWidth, requiredHeight, null);
+        return CellLayoutConfig.rectToCell(context.getResources(), requiredWidth, requiredHeight, null);
     }
 
     static int[] getSpanForWidget(Context context, AppWidgetProviderInfo info) {
@@ -1440,7 +1466,7 @@ public final class Launcher extends Activity
         launcherInfo.hostView = null;
     }
 
-    void showOutOfSpaceMessage(boolean isHotseatLayout) {
+    public void showOutOfSpaceMessage(boolean isHotseatLayout) {
         int strId = (isHotseatLayout ? R.string.hotseat_out_of_space : R.string.out_of_space);
         Toast.makeText(this, getString(strId), Toast.LENGTH_SHORT).show();
     }
@@ -1572,7 +1598,7 @@ public final class Launcher extends Activity
             if (currentTabTag != null) {
                 outState.putString("apps_customize_currentTab", currentTabTag);
             }
-            int currentIndex = mAppsCustomizeContent.getSaveInstanceStateIndex();
+            int currentIndex = mAppsCustomizeContent._getSaveInstanceStateIndex();
             outState.putInt("apps_customize_currentIndex", currentIndex);
         }
     }
@@ -2179,7 +2205,7 @@ public final class Launcher extends Activity
         return false;
     }
 
-    boolean startActivitySafely(View v, Intent intent, Object tag) {
+   public boolean startActivitySafely(View v, Intent intent, Object tag) {
         boolean success = false;
         try {
             success = startActivity(v, intent, tag);
@@ -2298,7 +2324,7 @@ public final class Launcher extends Activity
         FolderInfo info = (FolderInfo) fi.getTag();
         if (info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT) {
             CellLayout cl = (CellLayout) fi.getParent().getParent();
-            CellLayout.LayoutParams lp = (CellLayout.LayoutParams) fi.getLayoutParams();
+            CellLayoutLayoutParams lp = (CellLayoutLayoutParams) fi.getLayoutParams();
             cl.setFolderLeaveBehindCell(lp.cellX, lp.cellY);
         }
 
@@ -2461,7 +2487,7 @@ public final class Launcher extends Activity
         }
     }
 
-    Workspace getWorkspace() {
+   public Workspace getWorkspace() {
         return mWorkspace;
     }
 
@@ -2501,7 +2527,7 @@ public final class Launcher extends Activity
                 mWorkspaceBackgroundDrawable : null);
     }
 
-    void updateWallpaperVisibility(boolean visible) {
+    public void updateWallpaperVisibility(boolean visible) {
         int wpflags = visible ? WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER : 0;
         int curflags = getWindow().getAttributes().flags
                 & WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER;
@@ -2598,7 +2624,7 @@ public final class Launcher extends Activity
         final int fadeDuration = res.getInteger(R.integer.config_appsCustomizeFadeInTime);
         final float scale = (float) res.getInteger(R.integer.config_appsCustomizeZoomScaleFactor);
         final View fromView = mWorkspace;
-        final AppsCustomizeTabHost toView = mAppsCustomizeTabHost;
+        final IAppsCustomizeTabHost toView = mAppsCustomizeTabHost;
         final int startDelay =
                 res.getInteger(R.integer.config_workspaceAppsCustomizeAnimationStagger);
 
@@ -2809,7 +2835,7 @@ public final class Launcher extends Activity
 
             dispatchOnLauncherTransitionPrepare(fromView, animated, true);
             dispatchOnLauncherTransitionPrepare(toView, animated, true);
-            mAppsCustomizeContent.pauseScrolling();
+            mAppsCustomizeContent._pauseScrolling();
 
             mStateAnimation.addListener(new AnimatorListenerAdapter() {
                 @Override
@@ -2824,8 +2850,8 @@ public final class Launcher extends Activity
                     if (onCompleteRunnable != null) {
                         onCompleteRunnable.run();
                     }
-                    mAppsCustomizeContent.updateCurrentPageScroll();
-                    mAppsCustomizeContent.resumeScrolling();
+                    mAppsCustomizeContent._updateCurrentPageScroll();
+                    mAppsCustomizeContent._resumeScrolling();
                 }
             });
 
@@ -2937,7 +2963,7 @@ public final class Launcher extends Activity
                 .sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
 
-    void enterSpringLoadedDragMode() {
+   public void enterSpringLoadedDragMode() {
         if (isAllAppsVisible()) {
             hideAppsCustomizeHelper(State.APPS_CUSTOMIZE_SPRING_LOADED, true, true, null);
             hideDockDivider();
@@ -2945,7 +2971,7 @@ public final class Launcher extends Activity
         }
     }
 
-    void exitSpringLoadedDragModeDelayed(final boolean successfulDrop, boolean extendedDelay,
+  public  void exitSpringLoadedDragModeDelayed(final boolean successfulDrop, boolean extendedDelay,
             final Runnable onCompleteRunnable) {
         if (mState != State.APPS_CUSTOMIZE_SPRING_LOADED) return;
 
@@ -2967,7 +2993,7 @@ public final class Launcher extends Activity
                 EXIT_SPRINGLOADED_MODE_SHORT_TIMEOUT));
     }
 
-    void exitSpringLoadedDragMode() {
+   public void exitSpringLoadedDragMode() {
         if (mState == State.APPS_CUSTOMIZE_SPRING_LOADED) {
             final boolean animated = true;
             final boolean springLoaded = true;
@@ -3647,8 +3673,8 @@ public final class Launcher extends Activity
         Collections.sort(mNewShortcutAnimateViews, new Comparator<View>() {
             @Override
             public int compare(View a, View b) {
-                CellLayout.LayoutParams alp = (CellLayout.LayoutParams) a.getLayoutParams();
-                CellLayout.LayoutParams blp = (CellLayout.LayoutParams) b.getLayoutParams();
+                CellLayoutLayoutParams alp = (CellLayoutLayoutParams) a.getLayoutParams();
+                CellLayoutLayoutParams blp = (CellLayoutLayoutParams) b.getLayoutParams();
                 int cellCountX = LauncherModel.getCellCountX();
                 return (alp.cellY * cellCountX + alp.cellX) - (blp.cellY * cellCountX + blp.cellX);
             }
@@ -4099,12 +4125,9 @@ public final class Launcher extends Activity
         Log.d(TAG, "*********************");
         Log.d(TAG, "");
     }
-}
 
-interface LauncherTransitionable {
-    View getContent();
-    void onLauncherTransitionPrepare(Launcher l, boolean animated, boolean toWorkspace);
-    void onLauncherTransitionStart(Launcher l, boolean animated, boolean toWorkspace);
-    void onLauncherTransitionStep(Launcher l, float t);
-    void onLauncherTransitionEnd(Launcher l, boolean animated, boolean toWorkspace);
+	@Override
+	public boolean _isAllAppsVisible() {
+		return isAllAppsVisible();
+	}
 }

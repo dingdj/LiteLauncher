@@ -16,6 +16,8 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -34,21 +36,20 @@ import android.view.ViewConfiguration;
 import android.view.inputmethod.InputMethodManager;
 
 import com.ddj.launcher.R;
-import com.ddj.launcher2.debug.Debug;
-
-import java.util.ArrayList;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.DragListener;
+import com.ddj.launcher2.core.DragSource;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.DropTarget;
+import com.ddj.launcher2.core.IDragController;
+import com.ddj.launcher2.core.ShortcutInfo;
 
 /**
  * Class for initiating a drag within a view or across multiple views.
  */
-public class DragController {
+public class DragController implements IDragController{
     private static final String TAG = "Launcher.DragController";
 
-    /** Indicates the drag is a move.  */
-    public static int DRAG_ACTION_MOVE = 0;
-
-    /** Indicates the drag is a copy.  */
-    public static int DRAG_ACTION_COPY = 1;
 
     private static final int SCROLL_DELAY = 500;
     private static final int RESCROLL_DELAY = 750;
@@ -119,27 +120,6 @@ public class DragController {
 
     protected int mFlingToDeleteThresholdVelocity;
     private VelocityTracker mVelocityTracker;
-
-    /**
-     * Interface to receive notifications when a drag starts or stops
-     */
-    interface DragListener {
-        
-        /**
-         * A drag has begun
-         * 
-         * @param source An object representing where the drag originated
-         * @param info The data associated with the object that is being dragged
-         * @param dragAction The drag action: either {@link DragController#DRAG_ACTION_MOVE}
-         *        or {@link DragController#DRAG_ACTION_COPY}
-         */
-        void onDragStart(DragSource source, Object info, int dragAction);
-        
-        /**
-         * The drag has ended
-         */
-        void onDragEnd();
-    }
     
     /**
      * Used to create a new DragLayer from XML.

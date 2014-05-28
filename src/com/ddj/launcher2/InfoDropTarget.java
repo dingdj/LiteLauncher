@@ -27,6 +27,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.DragSource;
+import com.ddj.launcher2.core.IAppsCustomizePagedView;
+import com.ddj.launcher2.core.PendingAddItemInfo;
+import com.ddj.launcher2.core.ShortcutInfo;
 
 public class InfoDropTarget extends ButtonDropTarget {
 
@@ -65,7 +70,7 @@ public class InfoDropTarget extends ButtonDropTarget {
     }
 
     private boolean isFromAllApps(DragSource source) {
-        return (source instanceof AppsCustomizePagedView);
+        return (source instanceof IAppsCustomizePagedView);
     }
 
     @Override

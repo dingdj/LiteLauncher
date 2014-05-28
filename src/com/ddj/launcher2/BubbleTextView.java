@@ -29,6 +29,11 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.ddj.launcher.R;
+import com.ddj.launcher2.core.CheckLongPressHelper;
+import com.ddj.launcher2.core.FastBitmapDrawable;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.ShortcutInfo;
 import com.ddj.launcher2.util.BubbleViewHelper;
 import com.ddj.launcher2.util.StringUtils;
 

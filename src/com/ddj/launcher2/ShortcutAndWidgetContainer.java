@@ -24,6 +24,8 @@ import android.graphics.Rect;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+
 public class ShortcutAndWidgetContainer extends ViewGroup {
     static final String TAG = "CellLayoutChildren";
 
@@ -61,7 +63,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup {
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            CellLayout.LayoutParams lp = (CellLayout.LayoutParams) child.getLayoutParams();
+            CellLayoutLayoutParams lp = (CellLayoutLayoutParams) child.getLayoutParams();
 
             if ((lp.cellX <= x) && (x < lp.cellX + lp.cellHSpan) &&
                     (lp.cellY <= y) && (y < lp.cellY + lp.cellVSpan)) {
@@ -81,7 +83,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup {
             p.setColor(0x6600FF00);
             for (int i = getChildCount() - 1; i >= 0; i--) {
                 final View child = getChildAt(i);
-                final CellLayout.LayoutParams lp = (CellLayout.LayoutParams) child.getLayoutParams();
+                final CellLayoutLayoutParams lp = (CellLayoutLayoutParams) child.getLayoutParams();
 
                 canvas.drawRect(lp.x, lp.y, lp.x + lp.width, lp.y + lp.height, p);
             }
@@ -101,7 +103,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup {
         setMeasuredDimension(widthSpecSize, heightSpecSize);
     }
 
-    public void setupLp(CellLayout.LayoutParams lp) {
+    public void setupLp(CellLayoutLayoutParams lp) {
         lp.setup(mCellWidth, mCellHeight, mWidthGap, mHeightGap, invertLayoutHorizontally(),
                 mCountX);
     }
@@ -114,7 +116,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup {
     public void measureChild(View child) {
         final int cellWidth = mCellWidth;
         final int cellHeight = mCellHeight;
-        CellLayout.LayoutParams lp = (CellLayout.LayoutParams) child.getLayoutParams();
+        CellLayoutLayoutParams lp = (CellLayoutLayoutParams) child.getLayoutParams();
 
         lp.setup(cellWidth, cellHeight, mWidthGap, mHeightGap, invertLayoutHorizontally(), mCountX);
         int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY);
@@ -137,7 +139,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup {
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
-                CellLayout.LayoutParams lp = (CellLayout.LayoutParams) child.getLayoutParams();
+                CellLayoutLayoutParams lp = (CellLayoutLayoutParams) child.getLayoutParams();
 
                 int childLeft = lp.x;
                 int childTop = lp.y;

@@ -16,23 +16,22 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -44,14 +43,22 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.ddj.launcher.R;
-import com.ddj.launcher2.DropTarget.DragObject;
 import com.ddj.launcher2.FolderInfo.FolderListener;
-import com.ddj.launcher2.LauncherSettings.Favorites;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+import com.ddj.launcher2.core.CheckLongPressHelper;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.DropTarget;
+import com.ddj.launcher2.core.DropTarget.DragObject;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherAnimUtils;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherSettings.Favorites;
+import com.ddj.launcher2.core.ShortcutInfo;
 import com.ddj.launcher2.util.BubbleViewHelper;
 import com.ddj.launcher2.util.CellLayoutHelper;
 import com.ddj.launcher2.util.StringUtils;
-
-import java.util.ArrayList;
 
 /**
  * An icon that can appear on in the workspace representing an {@link UserFolder}.
@@ -342,7 +349,7 @@ public class FolderIcon extends LinearLayout implements FolderListener {
 
     public void onDragEnter(Object dragInfo) {
         if (mFolder.isDestroyed() || !willAcceptItem((ItemInfo) dragInfo)) return;
-        CellLayout.LayoutParams lp = (CellLayout.LayoutParams) getLayoutParams();
+        CellLayoutLayoutParams lp = (CellLayoutLayoutParams) getLayoutParams();
         CellLayout layout = (CellLayout) getParent().getParent();
         mFolderRingAnimator.setCell(lp.cellX, lp.cellY);
         mFolderRingAnimator.setCellLayout(layout);

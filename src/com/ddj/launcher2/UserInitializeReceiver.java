@@ -19,13 +19,13 @@ package com.ddj.launcher2;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.ddj.launcher.R;
-
 import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+
+import com.ddj.launcher.R;
 
 /**
  * Takes care of setting initial wallpaper for a user, by selecting the

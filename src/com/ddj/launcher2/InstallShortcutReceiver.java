@@ -16,6 +16,15 @@
 
 package com.ddj.launcher2;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
+import org.json.JSONObject;
+import org.json.JSONStringer;
+import org.json.JSONTokener;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,13 +38,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.ddj.launcher.R;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
-import org.json.*;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherUtil;
+import com.ddj.launcher2.core.ShortcutInfo;
 
 public class InstallShortcutReceiver extends BroadcastReceiver {
     public static final String ACTION_INSTALL_SHORTCUT =
@@ -204,7 +210,7 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
         info.icon = icon;
         info.iconResource = iconResource;
         if (mUseInstallQueue || launcherNotLoaded) {
-            String spKey = LauncherApplication.getSharedPreferencesKey();
+            String spKey = LauncherUtil.getSharedPreferencesKey();
             SharedPreferences sp = context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
             addToInstallQueue(sp, info);
         } else {
@@ -220,7 +226,7 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
         flushInstallQueue(context);
     }
     static void flushInstallQueue(Context context) {
-        String spKey = LauncherApplication.getSharedPreferencesKey();
+        String spKey = LauncherUtil.getSharedPreferencesKey();
         SharedPreferences sp = context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
         ArrayList<PendingInstallShortcutInfo> installQueue = getAndClearInstallQueue(sp);
         Iterator<PendingInstallShortcutInfo> iter = installQueue.iterator();
@@ -231,7 +237,7 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
 
     private static void processInstallShortcut(Context context,
             PendingInstallShortcutInfo pendingInfo) {
-        String spKey = LauncherApplication.getSharedPreferencesKey();
+        String spKey = LauncherUtil.getSharedPreferencesKey();
         SharedPreferences sp = context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
 
         final Intent data = pendingInfo.data;

@@ -16,6 +16,12 @@
 
 package com.ddj.launcher2;
 
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -52,20 +58,36 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.LinearLayout.LayoutParams;
 
 import com.ddj.launcher.R;
 import com.ddj.launcher2.FolderIcon.FolderRingAnimator;
-import com.ddj.launcher2.LauncherSettings.Favorites;
+import com.ddj.launcher2.core.PagedViewIcon;
+import com.ddj.launcher2.core.AppWidgetResizeFrame;
+import com.ddj.launcher2.core.ApplicationInfo;
+import com.ddj.launcher2.core.CellLayoutLayoutParams;
+import com.ddj.launcher2.core.DragListener;
+import com.ddj.launcher2.core.DragSource;
+import com.ddj.launcher2.core.DragView;
+import com.ddj.launcher2.core.DropTarget;
+import com.ddj.launcher2.core.ICellLayout;
+import com.ddj.launcher2.core.ILauncher;
+import com.ddj.launcher2.core.IWorkspace;
+import com.ddj.launcher2.core.IconCache;
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherAnimUtils;
+import com.ddj.launcher2.core.LauncherAppWidgetHostView;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.LauncherSettings.Favorites;
+import com.ddj.launcher2.core.LauncherTransitionable;
+import com.ddj.launcher2.core.LauncherUtil;
+import com.ddj.launcher2.core.PendingAddItemInfo;
+import com.ddj.launcher2.core.PendingAddShortcutInfo;
+import com.ddj.launcher2.core.PendingAddWidgetInfo;
+import com.ddj.launcher2.core.ShortcutInfo;
+import com.ddj.launcher2.core.ZInterpolator;
 import com.ddj.launcher2.debug.Debug;
 import com.ddj.launcher2.util.BubbleViewHelper;
 import com.ddj.launcher2.util.CellLayoutHelper;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * The workspace is a wide area with a wallpaper and a finite number of pages.
@@ -74,7 +96,7 @@ import java.util.Set;
  */
 public class Workspace extends SmoothPagedView
         implements DropTarget, DragSource, DragScroller, View.OnTouchListener,
-        DragController.DragListener, LauncherTransitionable, ViewGroup.OnHierarchyChangeListener {
+        DragListener, LauncherTransitionable, ViewGroup.OnHierarchyChangeListener, IWorkspace {
     private static final String TAG = "Launcher.Workspace";
 
     // Y rotation to apply to the workspace screens
@@ -121,8 +143,7 @@ public class Workspace extends SmoothPagedView
     private int mDragOverX = -1;
     private int mDragOverY = -1;
 
-    static Rect mLandscapeCellLayoutMetrics = null;
-    static Rect mPortraitCellLayoutMetrics = null;
+
 
     /**
      * The CellLayout that is currently being dragged over
@@ -569,11 +590,11 @@ public class Workspace extends SmoothPagedView
         }
 
         LayoutParams genericLp = child.getLayoutParams();
-        CellLayout.LayoutParams lp;
-        if (genericLp == null || !(genericLp instanceof CellLayout.LayoutParams)) {
-            lp = new CellLayout.LayoutParams(x, y, spanX, spanY);
+        CellLayoutLayoutParams lp;
+        if (genericLp == null || !(genericLp instanceof CellLayoutLayoutParams)) {
+            lp = new CellLayoutLayoutParams(x, y, spanX, spanY);
         } else {
-            lp = (CellLayout.LayoutParams) genericLp;
+            lp = (CellLayoutLayoutParams) genericLp;
             lp.cellX = x;
             lp.cellY = y;
             lp.cellHSpan = spanX;
@@ -599,6 +620,7 @@ public class Workspace extends SmoothPagedView
             child.setOnLongClickListener(mLongClickListener);
         }
         if (child instanceof DropTarget) {
+        	Debug.printStackForDebug("child instanceof DropTarget");
             mDragController.addDropTarget((DropTarget) child);
         }
     }
@@ -952,19 +974,19 @@ public class Workspace extends SmoothPagedView
     }
 
     @Override
-    protected void updateCurrentPageScroll() {
+	public void updateCurrentPageScroll() {
         super.updateCurrentPageScroll();
         computeWallpaperScrollRatio(mCurrentPage);
     }
 
     @Override
-    protected void snapToPage(int whichPage) {
+	public void snapToPage(int whichPage) {
         super.snapToPage(whichPage);
         computeWallpaperScrollRatio(whichPage);
     }
 
     @Override
-    protected void snapToPage(int whichPage, int duration) {
+	public void snapToPage(int whichPage, int duration) {
         super.snapToPage(whichPage, duration);
         computeWallpaperScrollRatio(whichPage);
     }
@@ -1478,25 +1500,6 @@ public class Workspace extends SmoothPagedView
     }
 
     /*
-     * This interpolator emulates the rate at which the perceived scale of an object changes
-     * as its distance from a camera increases. When this interpolator is applied to a scale
-     * animation on a view, it evokes the sense that the object is shrinking due to moving away
-     * from the camera.
-     */
-    static class ZInterpolator implements TimeInterpolator {
-        private float focalLength;
-
-        public ZInterpolator(float foc) {
-            focalLength = foc;
-        }
-
-        public float getInterpolation(float input) {
-            return (1.0f - focalLength / (focalLength + input)) /
-                (1.0f - focalLength / (focalLength + 1.0f));
-        }
-    }
-
-    /*
      * The exact reverse of ZInterpolator.
      */
     static class InverseZInterpolator implements TimeInterpolator {
@@ -1743,23 +1746,23 @@ public class Workspace extends SmoothPagedView
     }
 
     @Override
-    public void onLauncherTransitionPrepare(Launcher l, boolean animated, boolean toWorkspace) {
+    public void onLauncherTransitionPrepare(ILauncher l, boolean animated, boolean toWorkspace) {
         mIsSwitchingState = true;
         updateChildrenLayersEnabled(false);
         cancelScrollingIndicatorAnimations();
     }
 
     @Override
-    public void onLauncherTransitionStart(Launcher l, boolean animated, boolean toWorkspace) {
+    public void onLauncherTransitionStart(ILauncher l, boolean animated, boolean toWorkspace) {
     }
 
     @Override
-    public void onLauncherTransitionStep(Launcher l, float t) {
+    public void onLauncherTransitionStep(ILauncher l, float t) {
         mTransitionProgress = t;
     }
 
     @Override
-    public void onLauncherTransitionEnd(Launcher l, boolean animated, boolean toWorkspace) {
+    public void onLauncherTransitionEnd(ILauncher l, boolean animated, boolean toWorkspace) {
         mIsSwitchingState = false;
         mWallpaperOffset.setOverrideHorizontalCatchupConstant(false);
         updateChildrenLayersEnabled(false);
@@ -2071,7 +2074,7 @@ public class Workspace extends SmoothPagedView
         View dropOverView = target.getChildAt(targetCell[0], targetCell[1]);
 
         if (dropOverView != null) {
-            CellLayout.LayoutParams lp = (CellLayout.LayoutParams) dropOverView.getLayoutParams();
+            CellLayoutLayoutParams lp = (CellLayoutLayoutParams) dropOverView.getLayoutParams();
             if (lp.useTmpCoords && (lp.tmpCellX != lp.cellX || lp.tmpCellY != lp.tmpCellY)) {
                 return false;
             }
@@ -2100,7 +2103,7 @@ public class Workspace extends SmoothPagedView
         View dropOverView = target.getChildAt(targetCell[0], targetCell[1]);
 
         if (dropOverView != null) {
-            CellLayout.LayoutParams lp = (CellLayout.LayoutParams) dropOverView.getLayoutParams();
+            CellLayoutLayoutParams lp = (CellLayoutLayoutParams) dropOverView.getLayoutParams();
             if (lp.useTmpCoords && (lp.tmpCellX != lp.cellX || lp.tmpCellY != lp.tmpCellY)) {
                 return false;
             }
@@ -2290,7 +2293,7 @@ public class Workspace extends SmoothPagedView
                     }
 
                     // update the item's position after drop
-                    CellLayout.LayoutParams lp = (CellLayout.LayoutParams) cell.getLayoutParams();
+                    CellLayoutLayoutParams lp = (CellLayoutLayoutParams) cell.getLayoutParams();
                     lp.cellX = lp.tmpCellX = mTargetCell[0];
                     lp.cellY = lp.tmpCellY = mTargetCell[1];
                     lp.cellHSpan = item.spanX;
@@ -2331,7 +2334,7 @@ public class Workspace extends SmoothPagedView
                             lp.cellY);
                 } else {
                     // If we can't find a drop location, we return the item to its original position
-                    CellLayout.LayoutParams lp = (CellLayout.LayoutParams) cell.getLayoutParams();
+                    CellLayoutLayoutParams lp = (CellLayoutLayoutParams) cell.getLayoutParams();
                     mTargetCell[0] = lp.cellX;
                     mTargetCell[1] = lp.cellY;
                     CellLayout layout = (CellLayout) cell.getParent().getParent();
@@ -2424,44 +2427,6 @@ public class Workspace extends SmoothPagedView
         if (LauncherApplication.isScreenLarge()) {
             showOutlines();
         }
-    }
-
-    static Rect getCellLayoutMetrics(Launcher launcher, int orientation) {
-        Resources res = launcher.getResources();
-        Display display = launcher.getWindowManager().getDefaultDisplay();
-        Point smallestSize = new Point();
-        Point largestSize = new Point();
-        display.getCurrentSizeRange(smallestSize, largestSize);
-        if (orientation == CellLayout.LANDSCAPE) {
-            if (mLandscapeCellLayoutMetrics == null) {
-                int paddingLeft = res.getDimensionPixelSize(R.dimen.workspace_left_padding_land);
-                int paddingRight = res.getDimensionPixelSize(R.dimen.workspace_right_padding_land);
-                int paddingTop = res.getDimensionPixelSize(R.dimen.workspace_top_padding_land);
-                int paddingBottom = res.getDimensionPixelSize(R.dimen.workspace_bottom_padding_land);
-                int width = largestSize.x - paddingLeft - paddingRight;
-                int height = smallestSize.y - paddingTop - paddingBottom;
-                mLandscapeCellLayoutMetrics = new Rect();
-                CellLayout.getMetrics(mLandscapeCellLayoutMetrics, res,
-                        width, height, LauncherModel.getCellCountX(), LauncherModel.getCellCountY(),
-                        orientation);
-            }
-            return mLandscapeCellLayoutMetrics;
-        } else if (orientation == CellLayout.PORTRAIT) {
-            if (mPortraitCellLayoutMetrics == null) {
-                int paddingLeft = res.getDimensionPixelSize(R.dimen.workspace_left_padding_land);
-                int paddingRight = res.getDimensionPixelSize(R.dimen.workspace_right_padding_land);
-                int paddingTop = res.getDimensionPixelSize(R.dimen.workspace_top_padding_land);
-                int paddingBottom = res.getDimensionPixelSize(R.dimen.workspace_bottom_padding_land);
-                int width = smallestSize.x - paddingLeft - paddingRight;
-                int height = largestSize.y - paddingTop - paddingBottom;
-                mPortraitCellLayoutMetrics = new Rect();
-                CellLayout.getMetrics(mPortraitCellLayoutMetrics, res,
-                        width, height, LauncherModel.getCellCountX(), LauncherModel.getCellCountY(),
-                        orientation);
-            }
-            return mPortraitCellLayoutMetrics;
-        }
-        return null;
     }
 
     public void onDragExit(DragObject d) {
@@ -3188,7 +3153,7 @@ public class Workspace extends SmoothPagedView
             addInScreen(view, container, screen, mTargetCell[0], mTargetCell[1], info.spanX,
                     info.spanY, insertAtFirst);
             cellLayout.onDropChild(view);
-            CellLayout.LayoutParams lp = (CellLayout.LayoutParams) view.getLayoutParams();
+            CellLayoutLayoutParams lp = (CellLayoutLayoutParams) view.getLayoutParams();
             cellLayout.getShortcutsAndWidgets().measureChild(view);
 
 
@@ -3810,7 +3775,7 @@ public class Workspace extends SmoothPagedView
         post(new Runnable() {
             @Override
             public void run() {
-                String spKey = LauncherApplication.getSharedPreferencesKey();
+                String spKey = LauncherUtil.getSharedPreferencesKey();
                 SharedPreferences sp = context.getSharedPreferences(spKey,
                         Context.MODE_PRIVATE);
                 Set<String> newApps = sp.getStringSet(InstallShortcutReceiver.NEW_APPS_LIST_KEY,
@@ -3920,4 +3885,20 @@ public class Workspace extends SmoothPagedView
         if (dockDivider != null) dockDivider.setAlpha(reducedFade);
         scrollIndicator.setAlpha(1 - fade);
     }
+
+
+	@Override
+	public int _getScrollX() {
+		return getScrollX();
+	}
+
+	@Override
+	public int _getScrollY() {
+		return getScrollY();
+	}
+
+	@Override
+	public ICellLayout _getChildAt(int currentScreen) {
+		return (ICellLayout) getChildAt(currentScreen);
+	}
 }

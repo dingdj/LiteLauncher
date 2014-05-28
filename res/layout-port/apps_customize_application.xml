@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 
-<com.ddj.launcher2.PagedViewIcon
+<com.ddj.launcher2.core.PagedViewIcon
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:launcher="http://schemas.android.com/apk/res/com.ddj.launcher"
 

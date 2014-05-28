@@ -20,6 +20,10 @@ import java.util.ArrayList;
 
 import android.content.ContentValues;
 
+import com.ddj.launcher2.core.ItemInfo;
+import com.ddj.launcher2.core.LauncherSettings;
+import com.ddj.launcher2.core.ShortcutInfo;
+
 /**
  * Represents a folder containing shortcuts or apps.
  */
@@ -75,7 +79,7 @@ class FolderInfo extends ItemInfo {
     }
 
     @Override
-    void onAddToDatabase(ContentValues values) {
+   public  void onAddToDatabase(ContentValues values) {
         super.onAddToDatabase(values);
         values.put(LauncherSettings.Favorites.TITLE, title.toString());
     }
@@ -97,7 +101,7 @@ class FolderInfo extends ItemInfo {
     }
 
     @Override
-    void unbind() {
+    public void unbind() {
         super.unbind();
         listeners.clear();
     }

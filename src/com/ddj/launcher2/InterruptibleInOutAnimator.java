@@ -21,6 +21,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.view.View;
 
+import com.ddj.launcher2.core.LauncherAnimUtils;
+
 /**
  * A convenience class for two-way animations, e.g. a fadeIn/fadeOut animation.
  * With a regular ValueAnimator, if you call reverse to show the 'out' animation, you'll get
