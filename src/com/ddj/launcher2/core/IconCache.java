@@ -18,6 +18,9 @@ package com.ddj.launcher2.core;
 
 import java.util.HashMap;
 
+import com.ddj.launcher2.util.IconCustomizer;
+import com.ddj.launcher2.util.IconUtil;
+
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -217,7 +220,7 @@ public class IconCache {
             if (entry.title == null) {
                 entry.title = info.activityInfo.name;
             }
-            entry.icon = Utilities.createIconBitmap(getFullResIcon(info), mContext);
+            entry.icon = IconUtil.getInstance(mContext).createIconBitmap(getFullResIcon(info), mContext);
         }
         return entry;
     }

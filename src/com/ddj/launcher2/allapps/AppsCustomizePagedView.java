@@ -1325,7 +1325,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     }
 
     private void onSyncWidgetPageItems(AsyncTaskPageData data) {
-    	Debug.printStackForDebug("onSyncWidgetPageItems");
+    	//Debug.printStackForDebug("onSyncWidgetPageItems");
         if (mInTransition) {
             mDeferredSyncWidgetPageItems.add(data);
             return;

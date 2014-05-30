@@ -1748,7 +1748,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         }
 
         if (mContentIsRefreshable) {
-        	Debug.printStackForDebug("invalidatePageData");
+        	//Debug.printStackForDebug("invalidatePageData");
             // Force all scrolling-related behavior to end
             mScroller.forceFinished(true);
             mNextPage = INVALID_PAGE;

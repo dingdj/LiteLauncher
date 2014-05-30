@@ -226,8 +226,8 @@ public class Utilities {
             final Bitmap bitmap = Bitmap.createBitmap(textureWidth, textureHeight,
                     Bitmap.Config.ARGB_8888);
             final Canvas canvas = sCanvas;
-           /* float scaleRadio = getScaleRadio((BitmapDrawable)icon, sourceWidth, sourceHeight, sIconTextureWidth, textureHeight);
-            icon.setBounds(0, 0, sourceWidth, sourceHeight); */
+            //float scaleRadio = getScaleRadio((BitmapDrawable)icon, sourceWidth, sourceHeight, sIconTextureWidth, textureHeight);
+            /*icon.setBounds(0, 0, sourceWidth, sourceHeight); */
             canvas.setBitmap(bitmap);
            /* canvas.save();
             canvas.translate((sIconTextureWidth - sourceWidth*scaleRadio) / 2.0F, (sIconTextureHeight - sourceHeight*scaleRadio) / 2.0F);
@@ -368,123 +368,8 @@ public class Utilities {
         return new Random(System.currentTimeMillis()).nextInt(1 << 24);
     }
     
-    private static int getIconSize(int sDensity)
-    {
-      switch (sDensity)
-      {
-      default:
-        int i = 90 * sDensity / 240;
-        return i + i % 2;
-      case 480:
-        return 192;
-      case 320:
-      }
-      return 136;
-    }
-    
-    private static float getScaleRadio(BitmapDrawable drawable, int sw, int sh, int dw, int dh){
-    	float radioW = dw/(sw+0.0F);
-    	float radioH = dh/(sh+0.0F);
-    	float f3 = getContentRatio(drawable);
-    	//printStackForDebug();
-        Log.d("IconCustomizer", "Content Ratio = " + f3);
-        if ((f3 > 0.0F) && (f3 <= 2.0F))
-          return 0.9F * f3;
-    	return Math.min(1.0F, Math.min(radioW, radioH));
-    }
-    
-    private static float getContentRatio(Drawable drawable)
-    {
-        if(drawable instanceof BitmapDrawable)
-        {
-            Bitmap bitmap = ((BitmapDrawable)drawable).getBitmap();
-            float f = getEdgePosition(bitmap, true, false);
-            if(f >= 0.0F)
-            {
-                float f1 = getEdgePosition(bitmap, true, true);
-                if(f1 >= 0.0F)
-                {
-                    float f2 = getEdgePosition(bitmap, false, false);
-                    if(f2 >= 0.0F)
-                    {
-                        float f3 = getEdgePosition(bitmap, false, true);
-                        if(f3 >= 0.0F)
-                            return Math.min((float)sIconWidth / (1.0F + (f3 - f2)), (float)sIconHeight / (1.0F + (f1 - f)));
-                    }
-                }
-            }
-        }
-        return -1F;
-    }
-    
-    public static int getEdgePosition(Bitmap bitmap, boolean flag, boolean flag1){
-    	int w = bitmap.getWidth();
-    	int h = bitmap.getHeight();
-    	if(flag){//计算高度
-    		if(flag1){//计算从底部开始
-    			return getPosition(bitmap, h-1, w);
-    		}else{//计算从顶部开始
-    			return getPositionReverse(bitmap, h-1, w);
-    		}
-    	}else{//计算宽度
-    		if(flag1){//计算从右边开始
-    			return getPosition(bitmap, w-1, h);
-    		}else{//计算从左边开始
-    			return getPositionReverse(bitmap, w-1, h);
-    		}
-    	}
-    }
-    
-    /**
-     * outSideMax 外层循环最大值 h-1
-     * inSideMax 内层循环最大值
-     * @author dingdj
-     * Date:2013-12-26下午3:18:58
-     * @param outSideMax
-     * @return
-     */
-    private static int getPosition(Bitmap bitmap, int outSideMax, int insideMax){
-    	int j = outSideMax;
-		 for(; j>outSideMax/2; j--){
-			int rtn = 0;
-			for(int i=0; i<insideMax; i++){
-				if(bitmap.getPixel(i, j) >>>24 > 50){//如果该像素的alpha值小于50
-					rtn++;
-				}
-				if(rtn > 0){//有像素透明度大于50 判断这是边界
-					return j;
-				}
-			}
-		 }
-		 return -1;
-    }
-    
-    
-    
-    
-    /**
-     * outSideMax 外层循环最大值 h-1
-     * inSideMax 内层循环最大值
-     * @author dingdj
-     * Date:2013-12-26下午3:18:58
-     * @param outSideMax
-     * @return
-     */
-    private static int getPositionReverse(Bitmap bitmap, int outSideMax, int insideMax){
-    	int j = 0;
-		 for(; j<outSideMax/2; j++){
-			int rtn = 0;
-			for(int i=0; i<insideMax; i++){
-				if(bitmap.getPixel(i, j) >>>24 > 50){//如果该像素的alpha值大于50
-					rtn++;
-				}
-				if(rtn > 0){//有像素透明度大于50 判断这是边界
-					return j;
-				}
-			}
-		 }
-		 return -1;
-    }
+
+  
     
     /**
 	 * 将drawable转换为bitmap
